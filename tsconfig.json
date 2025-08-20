@@ -1,33 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "es2018",
     "module": "commonjs",
-    "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-    "baseUrl": "./src",
+    "resolveJsonModule": true,
+    "types": ["node", "express"],
+    "typeRoots": ["./node_modules/@types"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "@/types/*": ["types/*"],
-      "@/models/*": ["models/*"],
-      "@/routes/*": ["routes/*"],
-      "@/middleware/*": ["middleware/*"],
-      "@/utils/*": ["utils/*"],
-      "@/services/*": ["services/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "prisma"]
+  "exclude": ["node_modules", "dist"]
 }
