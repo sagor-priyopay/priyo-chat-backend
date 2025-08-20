@@ -15,17 +15,17 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: any, file: any, cb: any) => {
     cb(null, uploadsDir);
   },
-  filename: (req, file, cb) => {
+  filename: (req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
   },
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
   // Allow images and common file types
   const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|mp4|mp3|wav/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -73,7 +73,7 @@ router.post('/', authenticateToken, upload.single('file'), async (req: Authentic
 });
 
 // Serve uploaded files
-router.get('/:filename', (req, res) => {
+router.get('/:filename', (req: any, res: any) => {
   const filename = req.params.filename;
   const filePath = path.join(uploadsDir, filename);
   
