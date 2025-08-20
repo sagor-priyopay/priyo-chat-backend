@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
+const fileFilter = (req: any, file: any, cb: any) => {
   // Allow images and common file types
   const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|mp4|mp3|wav/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());

@@ -7,7 +7,7 @@ export interface AuthenticatedRequest extends Request {
     username: string;
     role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
   };
-  file?: Express.Multer.File;
+  file?: any;
 }
 
 export interface JWTPayload {
