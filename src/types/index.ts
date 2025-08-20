@@ -8,6 +8,10 @@ export interface AuthenticatedRequest extends Request {
     role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
   };
   file?: any;
+  body: any;
+  params: any;
+  query: any;
+  headers: any;
 }
 
 export interface JWTPayload {

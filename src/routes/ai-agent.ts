@@ -86,10 +86,8 @@ router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Req
         content: message,
         senderId: aiUser.id,
         conversationId,
-        type: 'TEXT',
-        metadata: metadata ? JSON.stringify(metadata) : null
-      },
-      include: { sender: true }
+        type: 'TEXT'
+      }
     });
 
     // Emit to WebSocket for real-time delivery
@@ -97,8 +95,8 @@ router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Req
     socketService.emitToConversation(conversationId, 'message:new', {
       id: aiMessage.id,
       content: aiMessage.content,
-      sender: aiMessage.sender.username,
-      senderRole: aiMessage.sender.role,
+      senderId: aiMessage.senderId,
+      senderUsername: aiUser.username,
       timestamp: aiMessage.createdAt,
       conversationId,
       type: aiMessage.type,
@@ -111,8 +109,8 @@ router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Req
       socketService.emitToUser(participant.userId, 'message:new', {
         id: aiMessage.id,
         content: aiMessage.content,
-        sender: aiMessage.sender.username,
-        senderRole: aiMessage.sender.role,
+        senderId: aiMessage.senderId,
+        senderUsername: aiUser.username,
         timestamp: aiMessage.createdAt,
         conversationId,
         type: aiMessage.type,
