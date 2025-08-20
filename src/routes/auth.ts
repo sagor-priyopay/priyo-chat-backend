@@ -42,6 +42,7 @@ router.post('/register', validateRequest(authValidation.register), async (req: A
         email: true,
         username: true,
         avatar: true,
+        role: true,
         createdAt: true,
       },
     });
@@ -51,7 +52,7 @@ router.post('/register', validateRequest(authValidation.register), async (req: A
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: user.role,
+      role: user.role as any,
     });
 
     // Store refresh token
@@ -100,7 +101,7 @@ router.post('/login', validateRequest(authValidation.login), async (req: Authent
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: user.role,
+      role: user.role as any,
     });
 
     // Store refresh token
@@ -156,7 +157,7 @@ router.post('/refresh', validateRequest(authValidation.refreshToken), async (req
       userId: storedToken.user.id,
       email: storedToken.user.email,
       username: storedToken.user.username,
-      role: storedToken.user.role,
+      role: storedToken.user.role as any,
     });
 
     // Remove old refresh token and store new one

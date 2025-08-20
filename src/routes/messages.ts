@@ -173,8 +173,7 @@ router.post('/read', authenticateToken, validateRequest(messageValidation.markAs
     }));
 
     await prisma.messageRead.createMany({
-      data: readData,
-      skipDuplicates: true,
+      data: readData
     });
 
     res.json({ message: 'Messages marked as read' });

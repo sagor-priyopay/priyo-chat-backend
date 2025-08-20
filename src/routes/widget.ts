@@ -107,12 +107,12 @@ router.post('/conversation', authenticateToken, async (req: Request, res: Respon
       // Create new conversation
       let conversation = await prisma.conversation.create({
         data: {
-          title: `Widget Chat - ${visitorId}`,
+          name: `Widget Chat - ${visitorId}`,
           type: 'DIRECT',
           isActive: true,
           participants: {
             create: [
-              { userId, role: 'MEMBER' }
+              { userId }
             ]
           }
         },
@@ -145,7 +145,7 @@ router.post('/conversation', authenticateToken, async (req: Request, res: Respon
       success: true,
       conversation: {
         id: conversation.id,
-        title: conversation.title,
+        title: conversation.name,
         messages: conversation.messages.map(msg => ({
           id: msg.id,
           content: msg.content,
