@@ -16,11 +16,11 @@ export class JWTService {
 
   generateTokenPair(payload: JWTPayload): TokenPair {
     const accessToken = jwt.sign(payload, this.accessSecret, {
-      expiresIn: this.accessExpiresIn,
+      expiresIn: this.accessExpiresIn as any,
     });
 
     const refreshToken = jwt.sign(payload, this.refreshSecret, {
-      expiresIn: this.refreshExpiresIn,
+      expiresIn: this.refreshExpiresIn as any,
     });
 
     return { accessToken, refreshToken };
