@@ -60,10 +60,10 @@ async function startServer(): Promise<void> {
       contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", "data:", "blob:", "https:"],
-          connectSrc: ["'self'", "wss:", "https:"],
+          connectSrc: ["'self'", "ws:", "wss:", "https:", "http:"],
           fontSrc: ["'self'", "https:"],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
@@ -76,7 +76,7 @@ async function startServer(): Promise<void> {
           scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", "data:", "blob:"],
-          connectSrc: ["'self'", "ws:", "wss:", "https://priyo-chat-64wg.onrender.com"],
+          connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
@@ -98,7 +98,8 @@ async function startServer(): Promise<void> {
           'http://localhost:3000',
           'http://localhost:3002',
           'http://127.0.0.1:44693',
-          'http://localhost:44693'
+          'http://localhost:44693',
+          'null' // Allow file:// protocol and embedded widgets
         ]);
 
         // Allow requests with no origin (like mobile apps or curl)
