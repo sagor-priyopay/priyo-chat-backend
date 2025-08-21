@@ -1,296 +1,231 @@
-/* ---------- sound & notification helpers ---------- */
-function playBeep(frequency = 440, duration = 200, volume = 0.2) {
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
+function initChatWidget() {
+  /* ---------- DOM element references ---------- */
+  let chatBubble, chatWidget, chatCloseBtn, tabChatBtn, tabHelpBtn, tabContents, 
+      chatBody, chatFooter, chatInput, sendBtn, typingIndicator, bubbleArrow, 
+      bubblePopup, popupCloseBtn, openHelpBtn;
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
+  /* ---------- State variables ---------- */
+  let isChatOpen = false;
+  let activeTab = 'chat';
+  let welcomeShown = false;
 
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-
-  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-
-  oscillator.start();
-
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
-
-  oscillator.stop(audioCtx.currentTime + duration / 1000);
-}
-
-function playGentleSound() {
-  playBeep(880, 150, 0.1);
-}
-
-function playAlertSound() {
-  playBeep(440, 300, 0.3);
-}
-
-function showDesktopNotification(messageText) {
-  if (!("Notification" in window)) return;
-  if (Notification.permission === "granted") {
-    const notification = new Notification("Priyo Pay", {
-      body: messageText,
-      icon: "https://i.imgur.com/4DB1BHj.png"
-    });
-    notification.onclick = () => window.focus();
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission();
+  /* ---------- Sound & notification helpers ---------- */
+  function playBeep(frequency = 440, duration = 200, volume = 0.2) {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    oscillator.start();
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
+    oscillator.stop(audioCtx.currentTime + duration / 1000);
   }
-}
 
-/* ---------- grab DOM once ---------- */
-const chatBubble = document.getElementById('chatBubble');
-const chatWidget = document.getElementById('chatWidget');
-const chatCloseBtn = document.getElementById('chatCloseBtn');
-const tabChatBtn = document.getElementById('tabChatBtn');
-const tabHelpBtn = document.getElementById('tabHelpBtn');
-const tabContents = {
-  chat: document.getElementById('tabChat'),
-  help: document.getElementById('tabHelp')
-};
-const chatBody = document.getElementById('chatBody');
-const chatFooter = document.getElementById('chatFooter');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
-const typingIndicator = document.getElementById('typingIndicator');
-const bubbleArrow = document.getElementById('bubbleArrow');
-const bubblePopup = document.getElementById('bubblePopup');
-const popupCloseBtn = document.getElementById('popupCloseBtn');
-const openHelpBtn = document.getElementById('openHelpBtn');
+  function playGentleSound() { playBeep(880, 150, 0.1); }
+  function playAlertSound() { playBeep(440, 300, 0.3); }
 
-let isChatOpen = false;
-let activeTab = 'chat';
-let welcomeShown = false;
+  function showDesktopNotification(messageText) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      const notification = new Notification("Priyo Pay", {
+        body: messageText,
+        icon: "https://i.imgur.com/4DB1BHj.png"
+      });
+      notification.onclick = () => window.focus();
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+  }
 
-/* ---------- helpers ---------- */
-function adjustChatPadding() {
-  try {
+  /* ---------- DOM helpers ---------- */
+  function adjustChatPadding() {
+    if (!chatFooter || !chatBody) return;
     const footerHeight = chatFooter.offsetHeight || 56;
     chatBody.style.paddingBottom = (footerHeight + 8) + 'px';
-    tabContents.chat.style.paddingBottom = '0px';
-    tabContents.help.style.paddingBottom = '0px';
-  } catch (e) {
-    console.error('Error adjusting chat padding:', e);
   }
-}
 
-function scrollToBottom(behavior = 'auto') {
-  if (!chatBody) return;
-  chatBody.scrollTo({ top: chatBody.scrollHeight, behavior });
-}
-
-function showFooter() {
-  chatFooter.setAttribute('aria-hidden', 'false');
-  chatFooter.style.visibility = 'visible';
-  chatFooter.style.pointerEvents = 'auto';
-  chatFooter.style.opacity = '1';
-  chatFooter.style.display = 'flex';
-  console.log('Footer shown');
-}
-
-function hideFooter() {
-  chatFooter.setAttribute('aria-hidden', 'true');
-  chatFooter.style.visibility = 'hidden';
-  chatFooter.style.pointerEvents = 'none';
-  chatFooter.style.opacity = '0';
-  chatFooter.style.display = 'none';
-  console.log('Footer hidden');
-}
-
-/* ---------- open/close functions ---------- */
-function openWidget() {
-  chatWidget.style.display = 'flex';
-  isChatOpen = true;
-  switchTo('chat');
-  bubbleArrow.classList.add('show');
-  if (bubblePopup.classList.contains('show')) {
-    bubblePopup.classList.remove('show');
-    bubblePopup.addEventListener('transitionend', function onEnd() {
-      bubblePopup.style.display = 'none';
-      bubblePopup.removeEventListener('transitionend', onEnd);
-    }, { once: true });
+  function scrollToBottom(behavior = 'auto') {
+    if (!chatBody) return;
+    chatBody.scrollTo({ top: chatBody.scrollHeight, behavior });
   }
-  adjustChatPadding();
-  setTimeout(() => {
-    try { chatInput.focus(); } catch(e) { console.error('Error focusing input:', e); }
-    scrollToBottom('auto');
-    if (!welcomeShown) {
-      addMessage("Hello! 👋 Welcome to Priyo Pay. How can I help you today?", 'bot');
-      welcomeShown = true;
+
+  function showFooter() {
+    if (!chatFooter) return;
+    chatFooter.style.display = 'flex';
+  }
+
+  function hideFooter() {
+    if (!chatFooter) return;
+    chatFooter.style.display = 'none';
+  }
+
+  /* ---------- Core widget functions ---------- */
+  function openWidget() {
+    if (!chatWidget || !bubbleArrow || !bubblePopup) return;
+    chatWidget.style.display = 'flex';
+    isChatOpen = true;
+    switchTo('chat');
+    bubbleArrow.classList.add('show');
+    if (bubblePopup.classList.contains('show')) {
+      bubblePopup.classList.remove('show');
     }
-  }, 120);
-}
-
-function closeWidget() {
-  chatWidget.style.display = 'none';
-  isChatOpen = false;
-  bubbleArrow.classList.remove('show');
-  console.log('Widget closed');
-}
-
-/* ---------- tab switching ---------- */
-function switchTo(tab) {
-  if (tab === activeTab) return;
-  activeTab = tab;
-  console.log('Switching to tab:', tab);
-  [tabChatBtn, tabHelpBtn].forEach(btn => {
-    btn.classList.remove('active');
-    btn.setAttribute('aria-selected', 'false');
-  });
-  if (tab === 'chat') {
-    tabChatBtn.classList.add('active');
-    tabChatBtn.setAttribute('aria-selected', 'true');
-  }
-  if (tab === 'help') {
-    tabHelpBtn.classList.add('active');
-    tabHelpBtn.setAttribute('aria-selected', 'true');
-  }
-
-  tabContents.chat.style.display = (tab === 'chat') ? 'block' : 'none';
-  tabContents.help.style.display = (tab === 'help') ? 'block' : 'none';
-
-  if (tab === 'chat') {
-    showFooter();
     adjustChatPadding();
     setTimeout(() => {
-      try { chatInput.focus(); } catch(e) { console.error('Error focusing input:', e); }
-      scrollToBottom('smooth');
-    }, 80);
-  } else {
-    hideFooter();
-    try { chatInput.blur(); } catch(e) { console.error('Error blurring input:', e); }
+      if (chatInput) chatInput.focus();
+      scrollToBottom('auto');
+      if (!welcomeShown) {
+        addMessage("Hello! 👋 Welcome to Priyo Pay. How can I help you today?", 'bot');
+        welcomeShown = true;
+      }
+    }, 120);
   }
-}
 
-/* ---------- help tab action ---------- */
-const HELP_URL = 'https://help.priyo.com/en/';
-tabHelpBtn.addEventListener('click', () => {
-  window.open(HELP_URL, '_blank');
-  switchTo('help');
-});
-tabHelpBtn.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    tabHelpBtn.click();
+  function closeWidget() {
+    if (!chatWidget || !bubbleArrow) return;
+    chatWidget.style.display = 'none';
+    isChatOpen = false;
+    bubbleArrow.classList.remove('show');
   }
-});
 
-if (openHelpBtn) {
-  openHelpBtn.addEventListener('click', () => {
-    window.open(HELP_URL, '_blank');
-  });
-  openHelpBtn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openHelpBtn.click();
-    }
-  });
-}
+  function switchTo(tab) {
+    if (tab === activeTab || !tabChatBtn || !tabHelpBtn || !tabContents.chat || !tabContents.help) return;
+    activeTab = tab;
 
-tabChatBtn.addEventListener('click', () => switchTo('chat'));
-tabChatBtn.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    switchTo('chat');
-  }
-});
+    [tabChatBtn, tabHelpBtn].forEach(btn => btn.classList.remove('active'));
+    tab === 'chat' ? tabChatBtn.classList.add('active') : tabHelpBtn.classList.add('active');
 
-/* ---------- bubble click toggles widget ---------- */
-chatBubble.addEventListener('click', () => {
-  if (isChatOpen) closeWidget(); else openWidget();
-});
-chatBubble.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    chatBubble.click();
-  }
-});
-chatCloseBtn.addEventListener('click', closeWidget);
+    tabContents.chat.style.display = (tab === 'chat') ? 'block' : 'none';
+    tabContents.help.style.display = (tab === 'help') ? 'block' : 'none';
 
-/* ---------- messaging ---------- */
-function addMessage(text, sender = 'bot') {
-  const div = document.createElement('div');
-  div.className = 'message ' + (sender === 'user' ? 'user' : 'bot');
-  const avatar = document.createElement('div');
-  avatar.className = 'avatar ' + (sender === 'user' ? 'user' : 'bot');
-  const txt = document.createElement('div');
-  txt.className = 'message-text';
-  txt.textContent = text;
-  div.appendChild(avatar);
-  div.appendChild(txt);
-  chatBody.appendChild(div);
-  scrollToBottom('smooth');
-  if (sender === 'bot') {
-    if (isChatOpen) {
-      playGentleSound();
+    if (tab === 'chat') {
+      showFooter();
+      adjustChatPadding();
+      setTimeout(() => {
+        if (chatInput) chatInput.focus();
+        scrollToBottom('smooth');
+      }, 80);
     } else {
-      playAlertSound();
-      showDesktopNotification(text);
+      hideFooter();
     }
   }
+
+  function addMessage(text, sender = 'bot') {
+    if (!chatBody) return;
+    const div = document.createElement('div');
+    div.className = `message ${sender}`;
+    div.innerHTML = `<div class="avatar ${sender}"></div><div class="message-text"></div>`;
+    div.querySelector('.message-text').textContent = text;
+    chatBody.appendChild(div);
+    scrollToBottom('smooth');
+
+    if (sender === 'bot') {
+      isChatOpen ? playGentleSound() : playAlertSound();
+      if (!isChatOpen) showDesktopNotification(text);
+    }
+  }
+
+  async function sendMessage() {
+    if (!chatInput || activeTab !== 'chat') return;
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    addMessage(text, 'user');
+    chatInput.value = '';
+    if (typingIndicator) typingIndicator.style.display = 'block';
+
+    // Mock backend response
+    await new Promise(r => setTimeout(r, 900));
+    addMessage(`You said: "${text}"`, 'bot');
+    if (typingIndicator) typingIndicator.style.display = 'none';
+  }
+
+  /* ---------- Event binding ---------- */
+  function bindEvents() {
+    chatBubble.addEventListener('click', () => isChatOpen ? closeWidget() : openWidget());
+    chatCloseBtn.addEventListener('click', closeWidget);
+    tabChatBtn.addEventListener('click', () => switchTo('chat'));
+    tabHelpBtn.addEventListener('click', () => switchTo('help'));
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    popupCloseBtn.addEventListener('click', () => bubblePopup.classList.remove('show'));
+    openHelpBtn.addEventListener('click', () => window.open('https://help.priyo.com/en/', '_blank'));
+    window.addEventListener('resize', () => {
+      adjustChatPadding();
+      if (isChatOpen) scrollToBottom('auto');
+    });
+  }
+
+  /* ---------- Initialization ---------- */
+  function initialize() {
+    // Grab all DOM elements safely
+    chatBubble = document.getElementById('chatBubble');
+    chatWidget = document.getElementById('chatWidget');
+    chatCloseBtn = document.getElementById('chatCloseBtn');
+    tabChatBtn = document.getElementById('tabChatBtn');
+    tabHelpBtn = document.getElementById('tabHelpBtn');
+    tabContents = {
+      chat: document.getElementById('tabChat'),
+      help: document.getElementById('tabHelp')
+    };
+    chatBody = document.getElementById('chatBody');
+    chatFooter = document.getElementById('chatFooter');
+    chatInput = document.getElementById('chatInput');
+    sendBtn = document.getElementById('sendBtn');
+    typingIndicator = document.getElementById('typingIndicator');
+    bubbleArrow = document.getElementById('bubbleArrow');
+    bubblePopup = document.getElementById('bubblePopup');
+    popupCloseBtn = document.getElementById('popupCloseBtn');
+    openHelpBtn = document.getElementById('openHelpBtn');
+
+    // Check if essential elements exist
+    if (!chatBubble || !chatWidget) {
+      console.error("Priyo Widget: Essential elements not found. Initialization failed.");
+      return;
+    }
+
+    bindEvents();
+    adjustChatPadding();
+    switchTo('chat');
+    chatBubble.style.display = 'flex';
+
+    // Show welcome popup
+    setTimeout(() => {
+      if (bubblePopup) bubblePopup.classList.add('show');
+    }, 300);
+
+    // Request notification permission
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+
+    console.log("Priyo Widget Initialized Successfully");
+  }
+
+  // Wait for the DOM to be fully loaded before initializing
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
+
+  /* ---------- Public API ---------- */
+  window.PriyoWidget = {
+    open: openWidget,
+    close: closeWidget,
+    addMessage: addMessage,
+    setVisitorInfo: (email, name) => {
+      console.log(`Visitor info set: ${name} (${email})`);
+      // Here you would typically send this info to your backend
+    }
+  };
 }
 
-sendBtn.addEventListener('click', async () => {
-  const t = chatInput.value.trim();
-  if (!t || activeTab !== 'chat') return;
-  addMessage(t, 'user');
-  chatInput.value = '';
-  typingIndicator.style.display = 'block';
-  await new Promise(r => setTimeout(r, 900));
-  addMessage(`You said: \"${t}\"`, 'bot');
-  typingIndicator.style.display = 'none';
-});
-
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey && activeTab === 'chat') {
-    e.preventDefault();
-    sendBtn.click();
-  }
-});
-
-/* ---------- ensure scroll pinned to bottom on mutations ---------- */
-const obs = new MutationObserver(() => {
-  if (isChatOpen && activeTab === 'chat') scrollToBottom('auto');
-});
-obs.observe(chatBody, { childList: true, subtree: true });
-
-/* ---------- responsiveness adjustments ---------- */
-window.addEventListener('resize', () => {
-  adjustChatPadding();
-  if (isChatOpen && activeTab === 'chat') setTimeout(() => scrollToBottom('auto'), 120);
-});
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && isChatOpen && activeTab === 'chat') {
-    adjustChatPadding();
-    requestAnimationFrame(() => scrollToBottom('smooth'));
-  }
-});
-
-/* ---------- popup logic ---------- */
-window.addEventListener('load', () => {
-  bubblePopup.style.display = 'block';
-  setTimeout(() => {
-    bubblePopup.classList.add('show');
-  }, 300);
-});
-
-popupCloseBtn.addEventListener('click', () => {
-  bubblePopup.classList.remove('show');
-  bubblePopup.addEventListener('transitionend', function onEnd() {
-    bubblePopup.style.display = 'none';
-    bubblePopup.removeEventListener('transitionend', onEnd);
-  }, { once: true });
-});
-
-/* ---------- initial setup ---------- */
-adjustChatPadding();
-switchTo('chat');
-chatBubble.style.display = 'flex';
-
-window.addEventListener('load', () => {
-  if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-    Notification.requestPermission();
-  }
-});
+initChatWidget();
