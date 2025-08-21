@@ -121,10 +121,10 @@
 
             <div class="section">
                 <h2>🎛️ Widget Controls</h2>
-                <button class="button" onclick="openWidget()">Open Widget</button>
-                <button class="button" onclick="closeWidget()">Close Widget</button>
-                <button class="button" onclick="sendTestMessage()">Send Test Message</button>
-                <button class="button" onclick="clearStorage()">Clear Storage</button>
+                <button class="button" id="openWidgetBtn">Open Widget</button>
+                <button class="button" id="closeWidgetBtn">Close Widget</button>
+                <button class="button" id="sendTestMessageBtn">Send Test Message</button>
+                <button class="button" id="clearStorageBtn">Clear Storage</button>
             </div>
         </div>
 
@@ -132,31 +132,31 @@
             <h2>👤 User Configuration</h2>
             <input type="email" id="userEmail" placeholder="Enter email" value="test@example.com">
             <input type="text" id="userName" placeholder="Enter name" value="Test User">
-            <button class="button" onclick="setUserInfo()">Set User Info</button>
+            <button class="button" id="setUserInfoBtn">Set User Info</button>
             <div class="code" id="userInfo">User info will appear here...</div>
         </div>
 
         <div class="section">
             <h2>🔧 Backend API Tests</h2>
-            <button class="button" onclick="testHealthEndpoint()">Test Health</button>
-            <button class="button" onclick="testConversationAPI()">Test Conversations</button>
-            <button class="button" onclick="testMessagesAPI()">Test Messages</button>
-            <button class="button" onclick="runAllTests()">Run All Tests</button>
+            <button class="button" id="testHealthBtn">Test Health</button>
+            <button class="button" id="testConversationBtn">Test Conversations</button>
+            <button class="button" id="testMessagesBtn">Test Messages</button>
+            <button class="button" id="runAllTestsBtn">Run All Tests</button>
             <div id="apiTestResults"></div>
         </div>
 
         <div class="section">
             <h2>📝 Event Log</h2>
             <div id="eventLog" class="code" style="height: 200px; overflow-y: auto;"></div>
-            <button class="button" onclick="clearLog()">Clear Log</button>
+            <button class="button" id="clearLogBtn">Clear Log</button>
         </div>
 
         <div class="section">
             <h2>💬 Message Simulation</h2>
             <textarea id="customMessage" placeholder="Enter custom message..." rows="3"></textarea>
             <br>
-            <button class="button" onclick="simulateAgentMessage()">Simulate Agent Message</button>
-            <button class="button" onclick="simulateTyping()">Simulate Typing</button>
+            <button class="button" id="simulateAgentMessageBtn">Simulate Agent Message</button>
+            <button class="button" id="simulateTypingBtn">Simulate Typing</button>
         </div>
     </div>
 
@@ -358,6 +358,20 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             logEvent('Test page loaded', 'info');
+            
+            // Add event listeners for buttons
+            document.getElementById('openWidgetBtn').addEventListener('click', openWidget);
+            document.getElementById('closeWidgetBtn').addEventListener('click', closeWidget);
+            document.getElementById('sendTestMessageBtn').addEventListener('click', sendTestMessage);
+            document.getElementById('clearStorageBtn').addEventListener('click', clearStorage);
+            document.getElementById('setUserInfoBtn').addEventListener('click', setUserInfo);
+            document.getElementById('testHealthBtn').addEventListener('click', testHealthEndpoint);
+            document.getElementById('testConversationBtn').addEventListener('click', testConversationAPI);
+            document.getElementById('testMessagesBtn').addEventListener('click', testMessagesAPI);
+            document.getElementById('runAllTestsBtn').addEventListener('click', runAllTests);
+            document.getElementById('clearLogBtn').addEventListener('click', clearLog);
+            document.getElementById('simulateAgentMessageBtn').addEventListener('click', simulateAgentMessage);
+            document.getElementById('simulateTypingBtn').addEventListener('click', simulateTyping);
             
             // Test backend connection
             testHealthEndpoint();
