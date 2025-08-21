@@ -25,9 +25,11 @@ export const authenticateToken = (
 
   req.user = {
     id: payload.userId,
+    userId: payload.userId,
     email: payload.email,
     username: payload.username,
     role: payload.role,
+    visitorId: (payload as any).visitorId,
   };
 
   next();
