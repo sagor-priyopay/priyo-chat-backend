@@ -1,20 +1,8 @@
 (function() {
-  // Configuration - can be overridden by setting window.PRIYO_WIDGET_CONFIG before loading this script
-  const config = Object.assign({
-    apiBaseUrl: 'http://localhost:3000/api',
-    socketUrl: 'http://localhost:3000',
-    cssUrl: 'http://localhost:3000/widget/styles.css',
-    scriptUrl: 'http://localhost:3000/widget/priyo-widget-integrated.js'
-  }, window.PRIYO_WIDGET_CONFIG || {});
-
-  // Set global config for the widget script
-  window.PRIYO_WIDGET_API_URL = config.apiBaseUrl;
-  window.PRIYO_WIDGET_SOCKET_URL = config.socketUrl;
-
   // 1️⃣ Load CSS dynamically
   var link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = config.cssUrl;
+  link.href = '/widget/styles.css';
   document.head.appendChild(link);
 
   // 2️⃣ Insert full widget HTML dynamically
@@ -59,7 +47,7 @@
 
       <div id="tabChat" role="tabpanel" aria-labelledby="tabChatBtn" tabindex="0">
         <div id="chatBody" aria-live="polite" aria-relevant="additions"></div>
-        <div id="typingIndicator" style="display:none;">Priyo agent is typing...</div>
+        <div id="typingIndicator">Priyo is typing...</div>
       </div>
 
       <div id="tabHelp" role="tabpanel" aria-labelledby="tabHelpBtn" tabindex="0" style="display:none;">
@@ -82,19 +70,13 @@
   `;
   document.body.appendChild(container);
 
-  // 3️⃣ Load integrated script dynamically
+  // 3️⃣ Load script.js dynamically and initialize
   var script = document.createElement('script');
-  script.src = config.scriptUrl;
+  script.src = '/widget/priyo-widget-integrated.js';
   script.onload = function() {
-    // Widget is now ready
-    if (typeof window.PriyoWidget !== 'undefined') {
-      console.log('Priyo Widget loaded and integrated with backend');
-      
-      // Trigger custom event for integration
-      const event = new CustomEvent('priyoWidgetReady', { 
-        detail: { widget: window.PriyoWidget } 
-      });
-      window.dispatchEvent(event);
+    // Optional: if script.js has init function
+    if (typeof initChatWidget === 'function') {
+      initChatWidget();
     }
   };
   document.body.appendChild(script);

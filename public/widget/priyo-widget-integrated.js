@@ -1,211 +1,22 @@
-/* ---------- Priyo Chat Widget - Backend Integrated Version ---------- */
-
-// Configuration
-const WIDGET_CONFIG = {
-  apiBaseUrl: window.PRIYO_WIDGET_API_URL || 'http://localhost:3000/api',
-  socketUrl: window.PRIYO_WIDGET_SOCKET_URL || 'http://localhost:3000',
-  visitorId: null,
-  token: null,
-  conversationId: null,
-  socket: null,
-  isAuthenticated: false
-};
-
-// Generate unique visitor ID
-function generateVisitorId() {
-  return 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Get or create visitor ID
-function getVisitorId() {
-  if (WIDGET_CONFIG.visitorId) return WIDGET_CONFIG.visitorId;
-  
-  let visitorId = localStorage.getItem('priyo_visitor_id');
-  if (!visitorId) {
-    visitorId = generateVisitorId();
-    localStorage.setItem('priyo_visitor_id', visitorId);
-  }
-  WIDGET_CONFIG.visitorId = visitorId;
-  return visitorId;
-}
-
-/* ---------- API Functions ---------- */
-async function authenticateWidget() {
-  try {
-    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/auth`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: (() => {
-        const payload = { visitorId: getVisitorId() };
-        const email = localStorage.getItem('priyo_visitor_email');
-        const name = localStorage.getItem('priyo_visitor_name');
-        if (email && email.trim().length) payload.email = email.trim();
-        if (name && name.trim().length) payload.name = name.trim();
-        return JSON.stringify(payload);
-      })()
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      console.error('Auth failed:', {
-        status: response.status,
-        body: data
-      });
-      return false;
-    }
-    if (data.success) {
-      WIDGET_CONFIG.token = data.token;
-      WIDGET_CONFIG.isAuthenticated = true;
-      localStorage.setItem('priyo_widget_token', data.token);
-      return true;
-    }
-  } catch (error) {
-    console.error('Widget authentication failed:', error);
-  }
-  return false;
-}
-
-async function getOrCreateConversation() {
-  try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (WIDGET_CONFIG.token) headers['Authorization'] = `Bearer ${WIDGET_CONFIG.token}`;
-    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/conversation`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ visitorId: getVisitorId() })
-    });
-
-    const data = await response.json();
-    if (data.success) {
-      WIDGET_CONFIG.conversationId = data.conversation.id;
-      // Join the conversation room if socket is connected
-      if (WIDGET_CONFIG.socket && WIDGET_CONFIG.socket.connected && WIDGET_CONFIG.conversationId) {
-        WIDGET_CONFIG.socket.emit('conversation:join', WIDGET_CONFIG.conversationId);
-      }
-      return data.conversation;
-    }
-  } catch (error) {
-    console.error('Failed to get conversation:', error);
-  }
-  return null;
-}
-
-async function sendMessageToBackend(message) {
-  try {
-    // Ensure we have a conversation
-    if (!WIDGET_CONFIG.conversationId) {
-      const conv = await getOrCreateConversation();
-      if (!conv || !conv.id) {
-        console.error('No conversation available for sending message');
-        return false;
-      }
-    }
-
-    const headers = { 'Content-Type': 'application/json' };
-    if (WIDGET_CONFIG.token) headers['Authorization'] = `Bearer ${WIDGET_CONFIG.token}`;
-
-    const payload = {
-      message,
-      conversationId: WIDGET_CONFIG.conversationId,
-      visitorId: getVisitorId()
-    };
-
-    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/message`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      console.error('Message POST failed:', { status: response.status, body: data, payload });
-      return false;
-    }
-    return !!data.success;
-  } catch (error) {
-    console.error('Failed to send message:', error);
-    return false;
-  }
-}
-
-/* ---------- WebSocket Functions ---------- */
-function initializeSocket() {
-  if (!WIDGET_CONFIG.token) return;
-
-  // Load Socket.IO from CDN if not already loaded
-  if (typeof io === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
-    script.onload = () => connectSocket();
-    document.head.appendChild(script);
-  } else {
-    connectSocket();
-  }
-}
-
-function connectSocket() {
-  WIDGET_CONFIG.socket = io(WIDGET_CONFIG.socketUrl, {
-    auth: {
-      token: WIDGET_CONFIG.token
-    },
-    transports: ['websocket', 'polling']
-  });
-
-  WIDGET_CONFIG.socket.on('connect', () => {
-    console.log('Widget connected to socket');
-    if (WIDGET_CONFIG.conversationId) {
-      WIDGET_CONFIG.socket.emit('conversation:join', WIDGET_CONFIG.conversationId);
-    }
-  });
-
-  WIDGET_CONFIG.socket.on('message:new', (data) => {
-    if (data.conversationId === WIDGET_CONFIG.conversationId) {
-      // Only show messages from others (agents/admins)
-      if (data.senderRole !== 'CUSTOMER') {
-        addMessage(data.content, 'bot');
-      }
-    }
-  });
-
-  WIDGET_CONFIG.socket.on('typing:start', (data) => {
-    if (data.conversationId === WIDGET_CONFIG.conversationId && data.senderRole !== 'CUSTOMER') {
-      showTypingIndicator();
-    }
-  });
-
-  WIDGET_CONFIG.socket.on('typing:stop', (data) => {
-    if (data.conversationId === WIDGET_CONFIG.conversationId) {
-      hideTypingIndicator();
-    }
-  });
-
-  WIDGET_CONFIG.socket.on('disconnect', () => {
-    console.log('Widget disconnected from socket');
-  });
-}
-
-/* ---------- Sound & Notification Helpers ---------- */
+/* ---------- sound & notification helpers ---------- */
 function playBeep(frequency = 440, duration = 200, volume = 0.2) {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
 
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
 
-    oscillator.start();
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
-    oscillator.stop(audioCtx.currentTime + duration / 1000);
-  } catch (e) {
-    // Fallback for browsers without AudioContext
-  }
+  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+
+  oscillator.start();
+
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
+
+  oscillator.stop(audioCtx.currentTime + duration / 1000);
 }
 
 function playGentleSound() {
@@ -223,16 +34,13 @@ function showDesktopNotification(messageText) {
       body: messageText,
       icon: "https://i.imgur.com/4DB1BHj.png"
     });
-    notification.onclick = () => {
-      window.focus();
-      openWidget();
-    };
+    notification.onclick = () => window.focus();
   } else if (Notification.permission !== "denied") {
     Notification.requestPermission();
   }
 }
 
-/* ---------- DOM Elements ---------- */
+/* ---------- grab DOM once ---------- */
 const chatBubble = document.getElementById('chatBubble');
 const chatWidget = document.getElementById('chatWidget');
 const chatCloseBtn = document.getElementById('chatCloseBtn');
@@ -255,9 +63,8 @@ const openHelpBtn = document.getElementById('openHelpBtn');
 let isChatOpen = false;
 let activeTab = 'chat';
 let welcomeShown = false;
-let typingTimeout = null;
 
-/* ---------- Helper Functions ---------- */
+/* ---------- helpers ---------- */
 function adjustChatPadding() {
   try {
     const footerHeight = chatFooter.offsetHeight || 56;
@@ -280,6 +87,7 @@ function showFooter() {
   chatFooter.style.pointerEvents = 'auto';
   chatFooter.style.opacity = '1';
   chatFooter.style.display = 'flex';
+  console.log('Footer shown');
 }
 
 function hideFooter() {
@@ -288,28 +96,15 @@ function hideFooter() {
   chatFooter.style.pointerEvents = 'none';
   chatFooter.style.opacity = '0';
   chatFooter.style.display = 'none';
+  console.log('Footer hidden');
 }
 
-function showTypingIndicator() {
-  if (typingIndicator) {
-    typingIndicator.style.display = 'block';
-    scrollToBottom('smooth');
-  }
-}
-
-function hideTypingIndicator() {
-  if (typingIndicator) {
-    typingIndicator.style.display = 'none';
-  }
-}
-
-/* ---------- Widget Open/Close Functions ---------- */
-async function openWidget() {
+/* ---------- open/close functions ---------- */
+function openWidget() {
   chatWidget.style.display = 'flex';
   isChatOpen = true;
   switchTo('chat');
   bubbleArrow.classList.add('show');
-  
   if (bubblePopup.classList.contains('show')) {
     bubblePopup.classList.remove('show');
     bubblePopup.addEventListener('transitionend', function onEnd() {
@@ -317,34 +112,11 @@ async function openWidget() {
       bubblePopup.removeEventListener('transitionend', onEnd);
     }, { once: true });
   }
-  
   adjustChatPadding();
-  
-  // Initialize backend connection if not already done
-  if (!WIDGET_CONFIG.isAuthenticated) {
-    const authenticated = await authenticateWidget();
-    if (authenticated) {
-      initializeSocket();
-      const conversation = await getOrCreateConversation();
-      if (conversation && conversation.messages) {
-        // Load existing messages
-        conversation.messages.forEach(msg => {
-          const sender = msg.senderRole === 'CUSTOMER' ? 'user' : 'bot';
-          addMessage(msg.content, sender, false); // false = don't play sound for existing messages
-        });
-      }
-    }
-  }
-  
   setTimeout(() => {
-    try { 
-      chatInput.focus(); 
-    } catch(e) { 
-      console.error('Error focusing input:', e); 
-    }
+    try { chatInput.focus(); } catch(e) { console.error('Error focusing input:', e); }
     scrollToBottom('auto');
-    
-    if (!welcomeShown && !WIDGET_CONFIG.conversationId) {
+    if (!welcomeShown) {
       addMessage("Hello! 👋 Welcome to Priyo Pay. How can I help you today?", 'bot');
       welcomeShown = true;
     }
@@ -355,18 +127,18 @@ function closeWidget() {
   chatWidget.style.display = 'none';
   isChatOpen = false;
   bubbleArrow.classList.remove('show');
+  console.log('Widget closed');
 }
 
-/* ---------- Tab Switching ---------- */
+/* ---------- tab switching ---------- */
 function switchTo(tab) {
   if (tab === activeTab) return;
   activeTab = tab;
-
+  console.log('Switching to tab:', tab);
   [tabChatBtn, tabHelpBtn].forEach(btn => {
     btn.classList.remove('active');
     btn.setAttribute('aria-selected', 'false');
   });
-  
   if (tab === 'chat') {
     tabChatBtn.classList.add('active');
     tabChatBtn.setAttribute('aria-selected', 'true');
@@ -383,88 +155,21 @@ function switchTo(tab) {
     showFooter();
     adjustChatPadding();
     setTimeout(() => {
-      try { 
-        chatInput.focus(); 
-      } catch(e) { 
-        console.error('Error focusing input:', e); 
-      }
+      try { chatInput.focus(); } catch(e) { console.error('Error focusing input:', e); }
       scrollToBottom('smooth');
     }, 80);
   } else {
     hideFooter();
-    try { 
-      chatInput.blur(); 
-    } catch(e) { 
-      console.error('Error blurring input:', e); 
-    }
+    try { chatInput.blur(); } catch(e) { console.error('Error blurring input:', e); }
   }
 }
 
-/* ---------- Messaging Functions ---------- */
-function addMessage(text, sender = 'bot', playSound = true) {
-  const div = document.createElement('div');
-  div.className = 'message ' + (sender === 'user' ? 'user' : 'bot');
-  
-  const avatar = document.createElement('div');
-  avatar.className = 'avatar ' + (sender === 'user' ? 'user' : 'bot');
-  
-  const txt = document.createElement('div');
-  txt.className = 'message-text';
-  txt.textContent = text;
-  
-  div.appendChild(avatar);
-  div.appendChild(txt);
-  chatBody.appendChild(div);
-  scrollToBottom('smooth');
-  
-  if (playSound && sender === 'bot') {
-    if (isChatOpen) {
-      playGentleSound();
-    } else {
-      playAlertSound();
-      showDesktopNotification(text);
-    }
-  }
-}
-
-async function sendMessage() {
-  const text = chatInput.value.trim();
-  if (!text || activeTab !== 'chat') return;
-  
-  // Add user message to UI immediately
-  addMessage(text, 'user', false);
-  chatInput.value = '';
-  
-  // Send typing indicator
-  if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId) {
-    WIDGET_CONFIG.socket.emit('typing:start', { conversationId: WIDGET_CONFIG.conversationId });
-  }
-  
-  // Send message to backend
-  const success = await sendMessageToBackend(text);
-  
-  // Stop typing indicator
-  if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId) {
-    WIDGET_CONFIG.socket.emit('typing:stop', { conversationId: WIDGET_CONFIG.conversationId });
-  }
-  
-  if (!success) {
-    // Fallback message if backend fails
-    setTimeout(() => {
-      addMessage("I'm sorry, there seems to be a connection issue. Please try again later.", 'bot');
-    }, 1000);
-  }
-}
-
-/* ---------- Event Listeners ---------- */
-// Help tab functionality
+/* ---------- help tab action ---------- */
 const HELP_URL = 'https://help.priyo.com/en/';
-
 tabHelpBtn.addEventListener('click', () => {
   window.open(HELP_URL, '_blank');
   switchTo('help');
 });
-
 tabHelpBtn.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
@@ -476,7 +181,6 @@ if (openHelpBtn) {
   openHelpBtn.addEventListener('click', () => {
     window.open(HELP_URL, '_blank');
   });
-  
   openHelpBtn.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -493,64 +197,70 @@ tabChatBtn.addEventListener('keydown', (e) => {
   }
 });
 
-// Bubble click toggles widget
+/* ---------- bubble click toggles widget ---------- */
 chatBubble.addEventListener('click', () => {
-  if (isChatOpen) closeWidget(); 
-  else openWidget();
+  if (isChatOpen) closeWidget(); else openWidget();
 });
-
 chatBubble.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
     chatBubble.click();
   }
 });
-
 chatCloseBtn.addEventListener('click', closeWidget);
 
-// Send message functionality
-sendBtn.addEventListener('click', sendMessage);
+/* ---------- messaging ---------- */
+function addMessage(text, sender = 'bot') {
+  const div = document.createElement('div');
+  div.className = 'message ' + (sender === 'user' ? 'user' : 'bot');
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar ' + (sender === 'user' ? 'user' : 'bot');
+  const txt = document.createElement('div');
+  txt.className = 'message-text';
+  txt.textContent = text;
+  div.appendChild(avatar);
+  div.appendChild(txt);
+  chatBody.appendChild(div);
+  scrollToBottom('smooth');
+  if (sender === 'bot') {
+    if (isChatOpen) {
+      playGentleSound();
+    } else {
+      playAlertSound();
+      showDesktopNotification(text);
+    }
+  }
+}
+
+sendBtn.addEventListener('click', async () => {
+  const t = chatInput.value.trim();
+  if (!t || activeTab !== 'chat') return;
+  addMessage(t, 'user');
+  chatInput.value = '';
+  typingIndicator.style.display = 'block';
+  await new Promise(r => setTimeout(r, 900));
+  addMessage(`You said: \"${t}\"`, 'bot');
+  typingIndicator.style.display = 'none';
+});
 
 chatInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey && activeTab === 'chat') {
     e.preventDefault();
-    sendMessage();
+    sendBtn.click();
   }
 });
 
-// Typing indicator for user
-chatInput.addEventListener('input', () => {
-  if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId && chatInput.value.trim()) {
-    WIDGET_CONFIG.socket.emit('typing:start', { conversationId: WIDGET_CONFIG.conversationId });
-    
-    // Clear existing timeout
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-    
-    // Set new timeout to stop typing
-    typingTimeout = setTimeout(() => {
-      if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId) {
-        WIDGET_CONFIG.socket.emit('typing:stop', { conversationId: WIDGET_CONFIG.conversationId });
-      }
-    }, 1000);
-  }
-});
-
-/* ---------- Auto-scroll on mutations ---------- */
+/* ---------- ensure scroll pinned to bottom on mutations ---------- */
 const obs = new MutationObserver(() => {
   if (isChatOpen && activeTab === 'chat') scrollToBottom('auto');
 });
 obs.observe(chatBody, { childList: true, subtree: true });
 
-/* ---------- Responsive adjustments ---------- */
+/* ---------- responsiveness adjustments ---------- */
 window.addEventListener('resize', () => {
   adjustChatPadding();
-  if (isChatOpen && activeTab === 'chat') {
-    setTimeout(() => scrollToBottom('auto'), 120);
-  }
+  if (isChatOpen && activeTab === 'chat') setTimeout(() => scrollToBottom('auto'), 120);
 });
-
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && isChatOpen && activeTab === 'chat') {
     adjustChatPadding();
@@ -558,7 +268,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-/* ---------- Popup logic ---------- */
+/* ---------- popup logic ---------- */
 window.addEventListener('load', () => {
   bubblePopup.style.display = 'block';
   setTimeout(() => {
@@ -574,26 +284,13 @@ popupCloseBtn.addEventListener('click', () => {
   }, { once: true });
 });
 
-/* ---------- Initialize ---------- */
+/* ---------- initial setup ---------- */
 adjustChatPadding();
+switchTo('chat');
+chatBubble.style.display = 'flex';
 
-// Try to restore previous session
-const savedToken = localStorage.getItem('priyo_widget_token');
-if (savedToken) {
-  WIDGET_CONFIG.token = savedToken;
-  WIDGET_CONFIG.isAuthenticated = true;
-  // Will initialize socket when widget is opened
-}
-
-/* ---------- Public API for customization ---------- */
-window.PriyoWidget = {
-  open: openWidget,
-  close: closeWidget,
-  setVisitorInfo: (email, name) => {
-    localStorage.setItem('priyo_visitor_email', email);
-    localStorage.setItem('priyo_visitor_name', name);
-  },
-  configure: (config) => {
-    Object.assign(WIDGET_CONFIG, config);
+window.addEventListener('load', () => {
+  if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission();
   }
-};
+});
