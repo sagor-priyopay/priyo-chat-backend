@@ -6,8 +6,8 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 
-import { DatabaseService } from '@/services/database';
-import { SocketService } from '@/services/socket';
+import { DatabaseService } from './services/database';
+import { SocketService } from './services/socket';
 
 // Import routes
 import authRoutes from './routes/auth';

@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest, SendMessageRequest } from '@/types';
-import { DatabaseService } from '@/services/database';
-import { authenticateToken } from '@/middleware/auth';
-import { validateRequest } from '@/middleware/validation';
-import { messageValidation } from '@/utils/validation';
+import { AuthenticatedRequest, SendMessageRequest } from '../types';
+import { DatabaseService } from '../services/database';
+import { SocketService } from '../services/socket';
+import { authenticateToken } from '../middleware/auth';
+import { validateRequest } from '../middleware/validation';
+import { messageSchemas, messageValidation } from '../utils/validation';
 
 const router = Router();
 const prisma = DatabaseService.getInstance();

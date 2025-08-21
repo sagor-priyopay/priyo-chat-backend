@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest } from '@/types';
+import { AuthenticatedRequest } from '../types';
 
 export const requireRole = (allowedRoles: ('ADMIN' | 'AGENT' | 'CUSTOMER')[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {

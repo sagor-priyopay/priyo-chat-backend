@@ -1,11 +1,11 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest, LoginRequest, RegisterRequest, RefreshTokenRequest } from '@/types';
-import { DatabaseService } from '@/services/database';
-import { JWTService } from '@/utils/jwt';
-import { PasswordService } from '@/utils/password';
-import { validateRequest } from '@/middleware/validation';
-import { authValidation } from '@/utils/validation';
-import { authenticateToken } from '@/middleware/auth';
+import { AuthenticatedRequest, LoginRequest, RegisterRequest, RefreshTokenRequest } from '../types';
+import { DatabaseService } from '../services/database';
+import { JWTService } from '../utils/jwt';
+import { PasswordService } from '../utils/password';
+import { validateRequest } from '../middleware/validation';
+import { authValidation } from '../utils/validation';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 const prisma = DatabaseService.getInstance();

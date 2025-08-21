@@ -2,8 +2,8 @@ import { Router, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { AuthenticatedRequest } from '@/types';
-import { authenticateToken } from '@/middleware/auth';
+import { AuthenticatedRequest } from '../types';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 

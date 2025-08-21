@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest } from '@/types';
-import { JWTService } from '@/utils/jwt';
+import { AuthenticatedRequest } from '../types';
+import { JWTService } from '../utils/jwt';
 
 const jwtService = new JWTService();
 

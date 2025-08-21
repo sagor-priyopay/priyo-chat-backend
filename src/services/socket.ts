@@ -2,7 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { DatabaseService } from './database';
-import { JWTPayload, SocketUser, TypingData, MessageData, MessageDeliveredData, MessageReadData } from '@/types';
+import { JWTPayload, SocketUser, TypingData, MessageData, MessageDeliveredData, MessageReadData } from '../types';
 
 export class SocketService {
   private io: SocketIOServer;

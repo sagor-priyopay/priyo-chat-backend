@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { JWTPayload, TokenPair } from '@/types';
+import { JWTPayload, TokenPair } from '../types';
 
 export class JWTService {
   private accessSecret: string;
