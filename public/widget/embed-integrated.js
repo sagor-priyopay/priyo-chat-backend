@@ -6,395 +6,451 @@
     widgetId: window.PRIYO_WIDGET_CONFIG?.widgetId || 'default-widget'
   };
 
-  // Create widget container
+  // Create widget container with user's exact HTML structure
   const widgetContainer = document.createElement('div');
-  widgetContainer.id = 'priyo-widget-container';
   widgetContainer.innerHTML = `
-    <!-- Chat Button -->
-    <div id="priyo-chat-button" class="priyo-chat-button">
-      <div class="priyo-button-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-      </div>
-      <div class="priyo-notification-badge" id="priyo-notification-badge" style="display: none;">
-        <span id="priyo-notification-count">1</span>
+    <!-- Chat bubble -->
+    <div id="chatBubble">
+      <img src="https://i.imgur.com/4DB1BHj.png" alt="Chat" />
+    </div>
+
+    <!-- Arrow above bubble (visible when widget open) -->
+    <div id="bubbleArrow"></div>
+
+    <!-- Welcome popup (from bubble) -->
+    <div id="bubblePopup">
+      <div class="popup-arrow"></div>
+      <div id="popupContent">
+        <span id="popupMessage">Hello! 👋 Welcome to Priyo Pay. How can I help you today?</span>
+        <button id="popupCloseBtn">&times;</button>
       </div>
     </div>
 
-    <!-- Chat Widget -->
-    <div id="priyo-chat-widget" class="priyo-chat-widget">
-      <!-- Header -->
-      <div class="priyo-chat-header">
-        <div class="priyo-header-info">
-          <div class="priyo-agent-avatar">
-            <img src="https://i.imgur.com/4DB1BHj.png" alt="Agent" />
-          </div>
-          <div class="priyo-agent-details">
-            <div class="priyo-agent-name">Priyo Support</div>
-            <div class="priyo-agent-status">
-              <span class="priyo-status-dot"></span>
-              <span id="priyo-agent-status-text">Online</span>
-            </div>
-          </div>
+    <!-- Chat widget -->
+    <div id="chatWidget">
+      <div class="chat-header">
+        <img src="https://imgur.com/OrhhQLr.png" alt="Priyo Pay Logo"/>
+        <span id="chatCloseBtn">&times;</span>
+      </div>
+
+      <div class="chat-tabs">
+        <div class="chat-tab active" id="tabChatBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+          </svg>
+          Chat
         </div>
-        <div class="priyo-header-actions">
-          <button id="priyo-minimize-btn" class="priyo-header-btn" title="Minimize">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 13H5v-2h14v2z"/>
-            </svg>
-          </button>
-          <button id="priyo-close-btn" class="priyo-header-btn" title="Close">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
+        <div class="chat-tab" id="tabHelpBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm1-7.75c-.34.17-.5.5-.5.75h-2a2.003 2.003 0 0 1 1.5-1.95V7h-1v-2h2v2.25z"/>
+          </svg>
+          Help
         </div>
       </div>
 
-      <!-- Messages Container -->
-      <div id="priyo-messages-container" class="priyo-messages-container">
-        <div class="priyo-welcome-message">
-          <div class="priyo-message priyo-bot-message">
-            <div class="priyo-message-avatar">
-              <img src="https://i.imgur.com/4DB1BHj.png" alt="Bot" />
-            </div>
-            <div class="priyo-message-content">
-              <div class="priyo-message-text">Hello! 👋 Welcome to Priyo Pay. How can I help you today?</div>
-              <div class="priyo-message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-            </div>
+      <div id="tabChat">
+        <div id="chatBody"></div>
+        <div id="typingIndicator">Priyo agent is typing...</div>
+      </div>
+
+      <div id="tabHelp" style="display: none;">
+        <div style="height:100%; display:flex; align-items:center; justify-content:center; padding:12px; box-sizing:border-box;">
+          <div>
+            <p style="margin:0 0 8px 0; font-weight:600;">Open the help center</p>
+            <p style="margin:0 0 12px 0; color:#666;">Clicking Help opens our full helpdesk in a new tab.</p>
+            <button id="openHelpBtn" style="padding:8px 12px; border-radius:6px; border:0; background:#E60023; color:#fff; cursor:pointer;">Open Help Center</button>
           </div>
         </div>
       </div>
 
-      <!-- Typing Indicator -->
-      <div id="priyo-typing-indicator" class="priyo-typing-indicator" style="display: none;">
-        <div class="priyo-typing-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <span class="priyo-typing-text">Agent is typing...</span>
-      </div>
-
-      <!-- Input Area -->
-      <div class="priyo-input-area">
-        <div class="priyo-input-container">
-          <input 
-            type="text" 
-            id="priyo-message-input" 
-            placeholder="Type your message..." 
-            maxlength="1000"
-          />
-          <button id="priyo-send-btn" class="priyo-send-btn" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-            </svg>
-          </button>
-        </div>
-        <div class="priyo-input-footer">
-          <span class="priyo-powered-by">Powered by Priyo Pay</span>
-        </div>
+      <div class="chat-footer" aria-hidden="false">
+        <input id="chatInput" type="text" placeholder="Type your message..." />
+        <button id="sendBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="white">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+          </svg>
+        </button>
       </div>
     </div>
   `;
 
-  // Inject CSS
+  // Inject user's exact CSS
   const style = document.createElement('style');
   style.textContent = `
-    /* Widget Styles */
-    #priyo-widget-container {
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Chat bubble */
+    #chatBubble {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      z-index: 2147483647;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-
-    .priyo-chat-button {
-      width: 60px;
-      height: 60px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      background-color: #E60023;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-      position: relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 9999;
+      user-select: none;
+      animation: pulse 2s infinite;
+      transition: transform 0.3s ease;
     }
 
-    .priyo-chat-button:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    #chatBubble img {
+      width: 58px;
+      height: 58px;
+      user-select: none;
+      pointer-events: none;
     }
 
-    .priyo-notification-badge {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background: #ff4757;
-      color: white;
-      border-radius: 50%;
-      width: 20px;
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(230, 0, 35, 0.7); }
+      50% { box-shadow: 0 0 12px 10px rgba(230, 0, 35, 0.3); }
+    }
+
+    /* Arrow above bubble (visible when widget open) */
+    #bubbleArrow {
+      position: fixed;
+      bottom: calc(20px + 56px + 8px);
+      right: 20px;
+      width: 56px;
       height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 10002;
+      transform-origin: center bottom;
     }
 
-    .priyo-chat-widget {
+    #bubbleArrow::before {
+      content: "";
       position: absolute;
-      bottom: 80px;
-      right: 0;
-      width: 350px;
-      height: 500px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      left: 50%;
+      transform: translateX(-50%) rotate(0deg);
+      bottom: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 16px solid #E60023;
+      width: 0;
+      height: 0;
+    }
+
+    /* show arrow state */
+    #bubbleArrow.show {
+      opacity: 1;
+      transform: translateY(-4px);
+      animation: bounce 2.5s infinite ease-in-out;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* Chat widget */
+    #chatWidget {
+      position: fixed;
+      bottom: 110px;
+      right: 20px;
+      width: 360px;
+      height: 560px;
+      background-color: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
       display: none;
       flex-direction: column;
       overflow: hidden;
-      transform: translateY(20px);
-      opacity: 0;
-      transition: all 0.3s ease;
+      z-index: 10003;
+      user-select: none;
+      animation: slideUp 0.4s ease forwards;
     }
 
-    .priyo-chat-widget.priyo-open {
-      display: flex;
-      transform: translateY(0);
-      opacity: 1;
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .priyo-chat-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 16px;
+    .chat-header {
+      background: #000;
+      padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-radius: 20px 20px 0 0;
+      flex-shrink: 0;
+      position: relative;
     }
 
-    .priyo-header-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .chat-header img {
+      width: 120px;
+      user-select: none;
     }
 
-    .priyo-agent-avatar img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.3);
+    #chatCloseBtn {
+      color: #fff;
+      font-size: 26px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #chatCloseBtn:hover {
+      color: #ff4d4d;
+      transform: scale(1.15);
+      transition: color 0.25s ease, transform 0.25s ease;
     }
 
-    .priyo-agent-name {
+    /* Welcome popup (from bubble) */
+    #bubblePopup {
+      position: fixed;
+      bottom: calc(20px + 56px + 6px);
+      right: calc(20px + 64px);
+      max-width: 260px;
+      background: #E60023;
+      color: white;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+      font-size: 14px;
       font-weight: 600;
-      font-size: 16px;
+      display: block;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10004;
+      user-select: none;
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(.2,.9,.2,1), transform 0.35s cubic-bezier(.2,.9,.2,1);
     }
 
-    .priyo-agent-status {
+    /* visible state */
+    #bubblePopup.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* little arrow on the popup pointing to bubble */
+    .popup-arrow {
+      position: absolute;
+      bottom: -8px;
+      right: 22px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #E60023;
+    }
+
+    #popupContent {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      opacity: 0.9;
+      width: 100%;
     }
 
-    .priyo-status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #2ed573;
+    #popupMessage {
+      flex: 1;
+      margin-right: 10px;
     }
 
-    .priyo-header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .priyo-header-btn {
-      background: none;
+    #popupCloseBtn {
+      background: transparent;
       border: none;
       color: white;
+      font-size: 18px;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      opacity: 0.8;
-      transition: opacity 0.2s;
+      line-height: 1;
+      padding: 0;
+      font-weight: 700;
     }
 
-    .priyo-header-btn:hover {
-      opacity: 1;
-      background: rgba(255, 255, 255, 0.1);
+    #popupCloseBtn:hover {
+      color: #ff9999;
     }
 
-    .priyo-messages-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      background: #f8f9fa;
-    }
-
-    .priyo-message {
+    /* Tabs */
+    .chat-tabs {
       display: flex;
+      justify-content: center;
       gap: 12px;
-      margin-bottom: 16px;
+      background: #000;
+      padding: 8px 10px;
+      border-radius: 0 0 20px 20px;
+      flex-shrink: 0;
     }
 
-    .priyo-user-message {
-      flex-direction: row-reverse;
-    }
-
-    .priyo-message-avatar img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-    }
-
-    .priyo-user-message .priyo-message-avatar {
-      background: #667eea;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
+    .chat-tab {
+      flex: 1;
+      max-width: 110px;
+      padding: 8px 14px;
+      border-radius: 25px;
+      background: #222;
+      color: #fff;
+      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: bold;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .chat-tab:hover {
+      transform: scale(1.05);
+      background: #444;
+    }
+
+    .chat-tab.active {
+      background: #E60023;
+    }
+
+    .chat-tab.active:hover {
+      background: #ff1a3c;
+    }
+
+    /* Each tab content is a flex child, with its own scrolling area */
+    #tabChat, #tabHelp {
+      padding: 10px;
+      flex: 1 1 auto;
+      overflow: hidden;
+      display: none;
+      box-sizing: border-box;
+    }
+
+    #tabChat {
+      display: block;
+    }
+
+    /* Chat body is the scrollable column */
+    #chatBody {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+      padding: 12px;
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    /* Footer */
+    .chat-footer {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      align-items: center;
+      background: #f2f2f2;
+      border-radius: 0 0 20px 20px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .chat-footer[aria-hidden="true"] {
+      visibility: hidden;
+      pointer-events: none;
+      opacity: 0;
+      display: none;
+    }
+
+    .chat-footer[aria-hidden="false"] {
+      visibility: visible;
+      pointer-events: auto;
+      opacity: 1;
+      display: flex;
+    }
+
+    #chatInput {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
       font-size: 14px;
+      outline: none;
+      box-sizing: border-box;
     }
 
-    .priyo-message-content {
-      max-width: 70%;
+    #sendBtn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #E60023;
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
     }
 
-    .priyo-message-text {
-      background: white;
-      padding: 12px 16px;
-      border-radius: 18px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    .message {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .message-text {
+      max-width: 75%;
+      padding: 10px 16px;
+      border-radius: 20px;
+      white-space: pre-wrap;
       word-wrap: break-word;
     }
 
-    .priyo-user-message .priyo-message-text {
-      background: #667eea;
-      color: white;
+    .message.bot .message-text {
+      background: #f0f0f0;
+      color: #000;
+      border-bottom-left-radius: 0;
     }
 
-    .priyo-message-time {
-      font-size: 11px;
-      color: #666;
-      margin-top: 4px;
-      padding: 0 4px;
+    .message.user .message-text {
+      background: #E60023;
+      color: #fff;
+      border-bottom-right-radius: 0;
     }
 
-    .priyo-typing-indicator {
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: #f8f9fa;
-    }
-
-    .priyo-typing-dots {
-      display: flex;
-      gap: 4px;
-    }
-
-    .priyo-typing-dots span {
-      width: 8px;
-      height: 8px;
+    .avatar {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: #667eea;
-      animation: priyo-typing 1.4s infinite ease-in-out;
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
     }
 
-    .priyo-typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .priyo-typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-    @keyframes priyo-typing {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
+    .avatar.bot {
+      background-image: url('https://i.imgur.com/4DB1BHj.png');
     }
 
-    .priyo-typing-text {
-      font-size: 12px;
+    #typingIndicator {
+      font-style: italic;
       color: #666;
+      font-size: 13px;
+      display: none;
+      margin-top: 6px;
     }
 
-    .priyo-input-area {
-      border-top: 1px solid #e9ecef;
-      background: white;
-    }
-
-    .priyo-input-container {
-      display: flex;
-      padding: 16px;
-      gap: 12px;
-      align-items: flex-end;
-    }
-
-    #priyo-message-input {
-      flex: 1;
-      border: 1px solid #e9ecef;
-      border-radius: 20px;
-      padding: 12px 16px;
-      font-size: 14px;
-      outline: none;
-      resize: none;
-      max-height: 100px;
-    }
-
-    #priyo-message-input:focus {
-      border-color: #667eea;
-    }
-
-    .priyo-send-btn {
-      background: #667eea;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: white;
-    }
-
-    .priyo-send-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-
-    .priyo-send-btn:not(:disabled):hover {
-      background: #5a67d8;
-      transform: scale(1.05);
-    }
-
-    .priyo-input-footer {
-      padding: 8px 16px;
-      text-align: center;
-      border-top: 1px solid #f1f3f4;
-    }
-
-    .priyo-powered-by {
-      font-size: 11px;
-      color: #999;
-    }
-
-    /* Mobile Responsive */
     @media (max-width: 480px) {
-      .priyo-chat-widget {
-        width: calc(100vw - 40px);
-        height: calc(100vh - 100px);
+      #chatWidget {
+        width: 95vw;
+        height: 60vh;
+        right: 2.5vw;
         bottom: 80px;
-        right: 20px;
+      }
+      #bubblePopup {
+        right: 12px;
+        bottom: calc(20px + 56px + 10px);
+        max-width: 70vw;
       }
     }
   `;
@@ -403,7 +459,7 @@
   document.head.appendChild(style);
   document.body.appendChild(widgetContainer);
 
-  // Load widget script
+  // Load widget script with backend integration
   const script = document.createElement('script');
   script.src = '/widget/widget.js';
   script.onload = function() {

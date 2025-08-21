@@ -8,6 +8,8 @@ class PriyoWidget {
     this.messageQueue = [];
     this.isConnected = false;
     this.elements = {};
+    this.currentTab = 'chat';
+    this.popupTimeout = null;
   }
 
   init(config) {
@@ -16,46 +18,66 @@ class PriyoWidget {
     this.bindEvents();
     this.initializeUser();
     this.connectWebSocket();
+    this.showWelcomePopup();
     console.log('Priyo Widget initialized');
   }
 
   initElements() {
     this.elements = {
-      chatButton: document.getElementById('priyo-chat-button'),
-      chatWidget: document.getElementById('priyo-chat-widget'),
-      messagesContainer: document.getElementById('priyo-messages-container'),
-      messageInput: document.getElementById('priyo-message-input'),
-      sendButton: document.getElementById('priyo-send-btn'),
-      typingIndicator: document.getElementById('priyo-typing-indicator'),
-      closeButton: document.getElementById('priyo-close-btn'),
-      minimizeButton: document.getElementById('priyo-minimize-btn'),
-      notificationBadge: document.getElementById('priyo-notification-badge'),
-      notificationCount: document.getElementById('priyo-notification-count'),
-      agentStatusText: document.getElementById('priyo-agent-status-text')
+      chatBubble: document.getElementById('chatBubble'),
+      chatWidget: document.getElementById('chatWidget'),
+      bubblePopup: document.getElementById('bubblePopup'),
+      bubbleArrow: document.getElementById('bubbleArrow'),
+      chatBody: document.getElementById('chatBody'),
+      chatInput: document.getElementById('chatInput'),
+      sendBtn: document.getElementById('sendBtn'),
+      chatCloseBtn: document.getElementById('chatCloseBtn'),
+      popupCloseBtn: document.getElementById('popupCloseBtn'),
+      tabChatBtn: document.getElementById('tabChatBtn'),
+      tabHelpBtn: document.getElementById('tabHelpBtn'),
+      tabChat: document.getElementById('tabChat'),
+      tabHelp: document.getElementById('tabHelp'),
+      typingIndicator: document.getElementById('typingIndicator'),
+      openHelpBtn: document.getElementById('openHelpBtn')
     };
   }
 
   bindEvents() {
-    // Chat button click
-    this.elements.chatButton.addEventListener('click', () => {
-      this.toggleWidget();
+    // Chat bubble click to open widget
+    this.elements.chatBubble.addEventListener('click', () => {
+      this.openWidget();
     });
 
-    // Close and minimize buttons
-    this.elements.closeButton.addEventListener('click', () => {
+    // Close button
+    this.elements.chatCloseBtn.addEventListener('click', () => {
       this.closeWidget();
     });
 
-    this.elements.minimizeButton.addEventListener('click', () => {
-      this.minimizeWidget();
+    // Popup close button
+    this.elements.popupCloseBtn.addEventListener('click', () => {
+      this.hideWelcomePopup();
+    });
+
+    // Tab switching
+    this.elements.tabChatBtn.addEventListener('click', () => {
+      this.switchTab('chat');
+    });
+
+    this.elements.tabHelpBtn.addEventListener('click', () => {
+      this.switchTab('help');
+    });
+
+    // Help button
+    this.elements.openHelpBtn.addEventListener('click', () => {
+      window.open('https://help.priyopay.com', '_blank');
     });
 
     // Message input
-    this.elements.messageInput.addEventListener('input', (e) => {
+    this.elements.chatInput.addEventListener('input', (e) => {
       this.handleInputChange(e.target.value);
     });
 
-    this.elements.messageInput.addEventListener('keypress', (e) => {
+    this.elements.chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         this.sendMessage();
@@ -63,7 +85,7 @@ class PriyoWidget {
     });
 
     // Send button
-    this.elements.sendButton.addEventListener('click', () => {
+    this.elements.sendBtn.addEventListener('click', () => {
       this.sendMessage();
     });
 
@@ -71,6 +93,14 @@ class PriyoWidget {
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && this.messageQueue.length > 0) {
         this.clearNotifications();
+      }
+    });
+
+    // Hide popup when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!this.elements.bubblePopup.contains(e.target) && 
+          !this.elements.chatBubble.contains(e.target)) {
+        this.hideWelcomePopup();
       }
     });
   }
@@ -161,19 +191,55 @@ class PriyoWidget {
     }
   }
 
-  toggleWidget() {
-    if (this.isOpen) {
-      this.closeWidget();
-    } else {
-      this.openWidget();
+  switchTab(tab) {
+    // Update tab buttons
+    this.elements.tabChatBtn.classList.remove('active');
+    this.elements.tabHelpBtn.classList.remove('active');
+    
+    // Hide all tab content
+    this.elements.tabChat.style.display = 'none';
+    this.elements.tabHelp.style.display = 'none';
+    
+    // Show selected tab
+    if (tab === 'chat') {
+      this.elements.tabChatBtn.classList.add('active');
+      this.elements.tabChat.style.display = 'block';
+      this.elements.chatInput.focus();
+    } else if (tab === 'help') {
+      this.elements.tabHelpBtn.classList.add('active');
+      this.elements.tabHelp.style.display = 'block';
+    }
+    
+    this.currentTab = tab;
+  }
+
+  showWelcomePopup() {
+    // Show popup after 2 seconds
+    this.popupTimeout = setTimeout(() => {
+      this.elements.bubblePopup.classList.add('show');
+      
+      // Auto-hide after 8 seconds
+      setTimeout(() => {
+        this.hideWelcomePopup();
+      }, 8000);
+    }, 2000);
+  }
+
+  hideWelcomePopup() {
+    this.elements.bubblePopup.classList.remove('show');
+    if (this.popupTimeout) {
+      clearTimeout(this.popupTimeout);
+      this.popupTimeout = null;
     }
   }
 
   openWidget() {
-    this.elements.chatWidget.classList.add('priyo-open');
+    this.elements.chatWidget.style.display = 'flex';
+    this.elements.bubbleArrow.classList.add('show');
+    this.hideWelcomePopup();
     this.isOpen = true;
     this.clearNotifications();
-    this.elements.messageInput.focus();
+    this.elements.chatInput.focus();
     
     // Mark messages as read
     if (this.conversationId) {
@@ -182,17 +248,14 @@ class PriyoWidget {
   }
 
   closeWidget() {
-    this.elements.chatWidget.classList.remove('priyo-open');
+    this.elements.chatWidget.style.display = 'none';
+    this.elements.bubbleArrow.classList.remove('show');
     this.isOpen = false;
-  }
-
-  minimizeWidget() {
-    this.closeWidget();
   }
 
   handleInputChange(value) {
     const isEmpty = value.trim().length === 0;
-    this.elements.sendButton.disabled = isEmpty;
+    this.elements.sendBtn.disabled = isEmpty;
 
     // Send typing indicator to agents
     if (this.socket && this.conversationId) {
@@ -204,12 +267,12 @@ class PriyoWidget {
   }
 
   async sendMessage() {
-    const messageText = this.elements.messageInput.value.trim();
+    const messageText = this.elements.chatInput.value.trim();
     if (!messageText) return;
 
     // Clear input
-    this.elements.messageInput.value = '';
-    this.elements.sendButton.disabled = true;
+    this.elements.chatInput.value = '';
+    this.elements.sendBtn.disabled = true;
 
     // Add user message to UI
     this.addMessage({
@@ -275,7 +338,7 @@ class PriyoWidget {
 
   addMessage(message) {
     const messageElement = document.createElement('div');
-    messageElement.className = `priyo-message ${message.sender === 'user' ? 'priyo-user-message' : 'priyo-bot-message'}`;
+    messageElement.className = `message ${message.sender === 'user' ? 'user' : 'bot'}`;
     
     const time = new Date(message.timestamp).toLocaleTimeString([], {
       hour: '2-digit', 
@@ -284,35 +347,26 @@ class PriyoWidget {
 
     if (message.sender === 'user') {
       messageElement.innerHTML = `
-        <div class="priyo-message-avatar">U</div>
-        <div class="priyo-message-content">
-          <div class="priyo-message-text">${this.escapeHtml(message.text)}</div>
-          <div class="priyo-message-time">${time}</div>
-        </div>
+        <div class="message-text">${this.escapeHtml(message.text)}</div>
       `;
     } else {
       messageElement.innerHTML = `
-        <div class="priyo-message-avatar">
-          <img src="https://i.imgur.com/4DB1BHj.png" alt="Agent" />
-        </div>
-        <div class="priyo-message-content">
-          <div class="priyo-message-text">${this.escapeHtml(message.text)}</div>
-          <div class="priyo-message-time">${time}</div>
-        </div>
+        <div class="avatar bot"></div>
+        <div class="message-text">${this.escapeHtml(message.text)}</div>
       `;
     }
 
-    this.elements.messagesContainer.appendChild(messageElement);
+    this.elements.chatBody.appendChild(messageElement);
     this.scrollToBottom();
   }
 
   renderMessages(messages) {
-    // Clear existing messages except welcome message
-    const welcomeMessage = this.elements.messagesContainer.querySelector('.priyo-welcome-message');
-    this.elements.messagesContainer.innerHTML = '';
+    // Clear existing messages
+    this.elements.chatBody.innerHTML = '';
     
-    if (welcomeMessage && messages.length === 0) {
-      this.elements.messagesContainer.appendChild(welcomeMessage);
+    // Add welcome message if no messages
+    if (messages.length === 0) {
+      this.addWelcomeMessage();
     }
 
     messages.forEach(message => {
@@ -320,19 +374,24 @@ class PriyoWidget {
     });
   }
 
+  addWelcomeMessage() {
+    const welcomeElement = document.createElement('div');
+    welcomeElement.className = 'message bot';
+    welcomeElement.innerHTML = `
+      <div class="avatar bot"></div>
+      <div class="message-text">Hello! 👋 Welcome to Priyo Pay. How can I help you today?</div>
+    `;
+    this.elements.chatBody.appendChild(welcomeElement);
+  }
+
   showTypingIndicator(show) {
-    this.elements.typingIndicator.style.display = show ? 'flex' : 'none';
+    this.elements.typingIndicator.style.display = show ? 'block' : 'none';
     if (show) {
       this.scrollToBottom();
     }
   }
 
   showNotification(messageText) {
-    // Update notification badge
-    const currentCount = parseInt(this.elements.notificationCount.textContent) || 0;
-    this.elements.notificationCount.textContent = currentCount + 1;
-    this.elements.notificationBadge.style.display = 'flex';
-
     // Browser notification
     if (Notification.permission === 'granted') {
       new Notification('New message from Priyo Support', {
@@ -346,8 +405,6 @@ class PriyoWidget {
   }
 
   clearNotifications() {
-    this.elements.notificationBadge.style.display = 'none';
-    this.elements.notificationCount.textContent = '1';
     this.messageQueue = [];
   }
 
@@ -366,12 +423,8 @@ class PriyoWidget {
   }
 
   updateConnectionStatus(status) {
-    this.elements.agentStatusText.textContent = status;
-    
-    const statusDot = document.querySelector('.priyo-status-dot');
-    if (statusDot) {
-      statusDot.style.background = status === 'Online' ? '#2ed573' : '#ff4757';
-    }
+    // Connection status can be logged or displayed elsewhere if needed
+    console.log(`Connection status: ${status}`);
   }
 
   playNotificationSound() {
@@ -398,27 +451,23 @@ class PriyoWidget {
 
   showError(message) {
     const errorElement = document.createElement('div');
-    errorElement.className = 'priyo-error-message';
-    errorElement.textContent = message;
-    errorElement.style.cssText = `
-      background: #ff4757;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      margin: 8px 16px;
-      font-size: 12px;
+    errorElement.className = 'message bot error';
+    errorElement.innerHTML = `
+      <div class="avatar bot"></div>
+      <div class="message-text" style="background: #ff4757; color: white;">${message}</div>
     `;
     
-    this.elements.messagesContainer.appendChild(errorElement);
+    this.elements.chatBody.appendChild(errorElement);
+    this.scrollToBottom();
     
     setTimeout(() => {
       errorElement.remove();
-    }, 3000);
+    }, 5000);
   }
 
   scrollToBottom() {
     setTimeout(() => {
-      this.elements.messagesContainer.scrollTop = this.elements.messagesContainer.scrollHeight;
+      this.elements.chatBody.scrollTop = this.elements.chatBody.scrollHeight;
     }, 100);
   }
 
@@ -438,7 +487,7 @@ class PriyoWidget {
   }
 
   sendCustomMessage(text) {
-    this.elements.messageInput.value = text;
+    this.elements.chatInput.value = text;
     this.sendMessage();
   }
 
