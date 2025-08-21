@@ -31,42 +31,6 @@ let socketService: SocketService;
 async function initializeApp() {
   try {
     await startServer();
-    
-    // 404 handler
-    app.use('*', (req, res) => {
-      res.status(404).json({ error: 'Route not found' });
-    });
-
-    // Global error handler
-    app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.error('Global error handler:', error);
-      
-      if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ error: 'File too large' });
-      }
-      
-      if (error.type === 'entity.parse.failed') {
-        return res.status(400).json({ error: 'Invalid JSON in request body' });
-      }
-
-      res.status(500).json({ 
-        error: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' && { details: error.message })
-      });
-    });
-
-    // Start server
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔌 WebSocket server ready`);
-    });
-
-    // Cleanup typing indicators every 5 minutes
-    setInterval(() => {
-      socketService.cleanupTypingIndicators();
-    }, 5 * 60 * 1000);
-
   } catch (error) {
     console.error('Failed to initialize application:', error);
     process.exit(1);
