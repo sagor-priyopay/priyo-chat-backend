@@ -11,7 +11,7 @@
   widgetContainer.innerHTML = `
     <!-- Chat bubble -->
     <div id="chatBubble">
-      <img src="https://i.imgur.com/4DB1BHj.png" alt="Chat" />
+      <img src="/widget/chat-icon.png" alt="Chat" />
     </div>
 
     <!-- Arrow above bubble (visible when widget open) -->
@@ -29,7 +29,7 @@
     <!-- Chat widget -->
     <div id="chatWidget">
       <div class="chat-header">
-        <img src="https://imgur.com/OrhhQLr.png" alt="Priyo Pay Logo"/>
+        <img src="/widget/logo.png" alt="Priyo Pay Logo"/>
         <span id="chatCloseBtn">&times;</span>
       </div>
 
@@ -429,7 +429,7 @@
     }
 
     .avatar.bot {
-      background-image: url('https://i.imgur.com/4DB1BHj.png');
+      background-image: url('/widget/chat-icon.png');
     }
 
     #typingIndicator {

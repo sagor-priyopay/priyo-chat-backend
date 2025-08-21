@@ -112,23 +112,27 @@ class PriyoWidget {
       localStorage.setItem('priyo_user_id', this.userId);
 
       // Create or get conversation
-      const response = await fetch(`${this.config.apiBaseUrl}/conversations`, {
+      const response = await fetch(`${this.config.apiBaseUrl}/widget/conversation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: this.userId,
-          widgetId: this.config.widgetId,
-          userAgent: navigator.userAgent,
-          url: window.location.href
+          visitorId: this.userId
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        this.conversationId = data.conversationId;
-        this.loadConversationHistory();
+        if (data.success) {
+          this.conversationId = data.conversation.id;
+          this.renderMessages(data.conversation.messages);
+          if (this.socket && this.socket.connected) {
+            this.socket.emit('join-conversation', this.conversationId);
+          }
+        }
+      } else {
+        console.error('Failed to initialize conversation:', await response.text());
       }
     } catch (error) {
       console.error('Failed to initialize user:', error);
@@ -180,11 +184,16 @@ class PriyoWidget {
   }
 
   async loadConversationHistory() {
+    if (!this.conversationId) return;
     try {
-      const response = await fetch(`${this.config.apiBaseUrl}/conversations/${this.conversationId}/messages`);
+      const response = await fetch(`${this.config.apiBaseUrl}/widget/conversation/${this.conversationId}/messages?visitorId=${this.userId}`);
       if (response.ok) {
-        const messages = await response.json();
-        this.renderMessages(messages);
+        const data = await response.json();
+        if (data.success) {
+          this.renderMessages(data.messages);
+        }
+      } else {
+        console.error('Failed to load conversation history:', await response.text());
       }
     } catch (error) {
       console.error('Failed to load conversation history:', error);
@@ -283,37 +292,20 @@ class PriyoWidget {
 
     try {
       // Send to backend
-      const response = await fetch(`${this.config.apiBaseUrl}/messages`, {
+      const response = await fetch(`${this.config.apiBaseUrl}/widget/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           conversationId: this.conversationId,
-          userId: this.userId,
-          text: messageText,
-          type: 'user'
+          visitorId: this.userId,
+          message: messageText
         })
       });
 
-      if (response.ok) {
-        const message = await response.json();
-        
-        // Send via WebSocket for real-time delivery
-        if (this.socket) {
-          this.socket.emit('send-message', {
-            conversationId: this.conversationId,
-            message: message
-          });
-        }
-
-        // Show typing indicator for AI/agent response
-        this.showTypingIndicator(true);
-        
-        // Auto-hide typing after 3 seconds if no response
-        setTimeout(() => {
-          this.showTypingIndicator(false);
-        }, 3000);
+      if (!response.ok) {
+        this.showError('Failed to send message. Please try again.');
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -396,7 +388,7 @@ class PriyoWidget {
     if (Notification.permission === 'granted') {
       new Notification('New message from Priyo Support', {
         body: messageText.substring(0, 100) + (messageText.length > 100 ? '...' : ''),
-        icon: 'https://i.imgur.com/4DB1BHj.png',
+        icon: '/widget/chat-icon.png',
         tag: 'priyo-chat'
       });
     } else if (Notification.permission !== 'denied') {
@@ -409,17 +401,17 @@ class PriyoWidget {
   }
 
   async markMessagesAsRead() {
-    try {
-      await fetch(`${this.config.apiBaseUrl}/conversations/${this.conversationId}/read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: this.userId })
-      });
-    } catch (error) {
-      console.error('Failed to mark messages as read:', error);
-    }
+    // try {
+    //   await fetch(`${this.config.apiBaseUrl}/conversations/${this.conversationId}/read`, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({ userId: this.userId })
+    //   });
+    // } catch (error) {
+    //   console.error('Failed to mark messages as read:', error);
+    // }
   }
 
   updateConnectionStatus(status) {
@@ -496,17 +488,17 @@ class PriyoWidget {
     localStorage.setItem('priyo_user_name', name);
     
     // Update backend with user info
-    if (this.conversationId) {
-      fetch(`${this.config.apiBaseUrl}/conversations/${this.conversationId}/user-info`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, name })
-      }).catch(error => {
-        console.error('Failed to update user info:', error);
-      });
-    }
+    // if (this.conversationId) {
+    //   fetch(`${this.config.apiBaseUrl}/conversations/${this.conversationId}/user-info`, {
+    //     method: 'PUT',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({ email, name })
+    //   }).catch(error => {
+    //     console.error('Failed to update user info:', error);
+    //   });
+    // }
   }
 }
 
@@ -516,7 +508,7 @@ window.PriyoWidget = new PriyoWidget();
 // Load Socket.IO if not already loaded
 if (typeof io === 'undefined') {
   const socketScript = document.createElement('script');
-  socketScript.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+  socketScript.src = '/widget/socket.io.min.js';
   socketScript.onload = () => {
     console.log('Socket.IO loaded');
   };
