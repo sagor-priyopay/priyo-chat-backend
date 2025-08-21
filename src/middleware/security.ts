@@ -66,18 +66,18 @@ export const auditLog = (req: AuthenticatedRequest, res: Response, next: NextFun
     
     // Log sensitive operations
     const sensitiveRoutes = ['/api/auth/', '/api/admin/', '/api/upload/'];
-    const isSensitive = sensitiveRoutes.some(route => req.path.startsWith(route));
+    const isSensitive = sensitiveRoutes.some(route => (req as any).path.startsWith(route));
     
     if (isSensitive || res.statusCode >= 400) {
       logger.info('API Request', {
-        method: req.method,
-        url: req.url,
+        method: (req as any).method,
+        url: (req as any).url,
         statusCode: res.statusCode,
         duration,
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
+        ip: (req as any).ip,
+        userAgent: (req as any).get('User-Agent'),
         userId: req.user?.id,
-        requestId: req.headers['x-request-id'],
+        headers: (req as any).headers,
         timestamp: new Date().toISOString()
       });
     }
@@ -103,7 +103,7 @@ export const userRateLimit = (maxRequests: number = 1000, windowMs: number = 15 
     }
     
     if (userLimit.count >= maxRequests) {
-      logger.warn('User rate limit exceeded', { userId, ip: req.ip });
+      logger.warn('Rate limit exceeded', { ip: (req as any).ip, path: (req as any).path });
       res.status(429).json({
         error: 'Too many requests',
         retryAfter: Math.ceil((userLimit.resetTime - now) / 1000)
