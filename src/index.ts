@@ -58,14 +58,32 @@ async function startServer(): Promise<void> {
     }));
     
     app.use(cors({
-      origin: [
-        process.env.CORS_ORIGIN || "http://localhost:3000",
-        "http://127.0.0.1:44693",
-        "http://localhost:44693",
-        "http://localhost:3002"
-      ],
+      origin: (origin, callback) => {
+        const envOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
+        const allowedOrigins = new Set([
+          ...envOrigins,
+          'http://localhost:3000',
+          'http://localhost:3002',
+          'http://127.0.0.1:44693',
+          'http://localhost:44693'
+        ]);
+
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        // Explicitly allow file:// which shows as 'null' Origin in browsers
+        if (origin === 'null') return callback(null, true);
+
+        if (allowedOrigins.has(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error(`CORS not allowed for origin: ${origin}`));
+      },
       credentials: true,
     }));
+
+    // Handle preflight for all routes
+    app.options('*', cors());
 
     // Rate limiting (disabled for development)
     // const limiter = rateLimit({

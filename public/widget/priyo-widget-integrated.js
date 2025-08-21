@@ -59,7 +59,7 @@ async function authenticateWidget() {
 
 async function getOrCreateConversation() {
   try {
-    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/api/widget/conversation`, {
+    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/conversation`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ async function getOrCreateConversation() {
 
 async function sendMessageToBackend(message) {
   try {
-    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/api/widget/message`, {
+    const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/message`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -408,7 +408,7 @@ async function sendMessage() {
   
   // Send typing indicator
   if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId) {
-    WIDGET_CONFIG.socket.emit('typing:start', WIDGET_CONFIG.conversationId);
+    WIDGET_CONFIG.socket.emit('typing:start', { conversationId: WIDGET_CONFIG.conversationId });
   }
   
   // Send message to backend
@@ -416,7 +416,7 @@ async function sendMessage() {
   
   // Stop typing indicator
   if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId) {
-    WIDGET_CONFIG.socket.emit('typing:stop', WIDGET_CONFIG.conversationId);
+    WIDGET_CONFIG.socket.emit('typing:stop', { conversationId: WIDGET_CONFIG.conversationId });
   }
   
   if (!success) {
@@ -492,7 +492,7 @@ chatInput.addEventListener('keydown', (e) => {
 // Typing indicator for user
 chatInput.addEventListener('input', () => {
   if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId && chatInput.value.trim()) {
-    WIDGET_CONFIG.socket.emit('typing:start', WIDGET_CONFIG.conversationId);
+    WIDGET_CONFIG.socket.emit('typing:start', { conversationId: WIDGET_CONFIG.conversationId });
     
     // Clear existing timeout
     if (typingTimeout) {
@@ -502,7 +502,7 @@ chatInput.addEventListener('input', () => {
     // Set new timeout to stop typing
     typingTimeout = setTimeout(() => {
       if (WIDGET_CONFIG.socket && WIDGET_CONFIG.conversationId) {
-        WIDGET_CONFIG.socket.emit('typing:stop', WIDGET_CONFIG.conversationId);
+        WIDGET_CONFIG.socket.emit('typing:stop', { conversationId: WIDGET_CONFIG.conversationId });
       }
     }, 1000);
   }
