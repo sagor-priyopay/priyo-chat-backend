@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Priyo Widget Integration Test</title>
+    <title>Priyo Widget Test - Backend Integration</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -15,7 +15,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.1);
             padding: 40px;
@@ -38,7 +38,7 @@
         }
         
         .button {
-            background: #E60023;
+            background: #667eea;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -50,7 +50,7 @@
         }
         
         .button:hover {
-            background: #d1001e;
+            background: #5a67d8;
         }
         
         .status {
@@ -85,68 +85,89 @@
             margin: 10px 0;
         }
         
-        input {
+        input, textarea {
             padding: 10px;
             border: none;
             border-radius: 5px;
             margin: 5px;
             font-size: 14px;
+            width: 200px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Priyo Widget Integration Test</h1>
+        <h1>🚀 Priyo Widget - Backend Integration Test</h1>
         
-        <div class="section">
-            <h2>📊 Widget Status</h2>
-            <div id="widgetStatus" class="status info">Loading widget...</div>
-            <div id="connectionStatus" class="status info">Checking connection...</div>
+        <div class="grid">
+            <div class="section">
+                <h2>📊 Connection Status</h2>
+                <div id="backendStatus" class="status info">Checking backend...</div>
+                <div id="socketStatus" class="status info">Checking WebSocket...</div>
+                <div id="widgetStatus" class="status info">Loading widget...</div>
+            </div>
+
+            <div class="section">
+                <h2>🎛️ Widget Controls</h2>
+                <button class="button" onclick="openWidget()">Open Widget</button>
+                <button class="button" onclick="closeWidget()">Close Widget</button>
+                <button class="button" onclick="sendTestMessage()">Send Test Message</button>
+                <button class="button" onclick="clearStorage()">Clear Storage</button>
+            </div>
         </div>
-        
+
         <div class="section">
-            <h2>🎛️ Widget Controls</h2>
-            <button class="button" onclick="openWidget()">Open Widget</button>
-            <button class="button" onclick="closeWidget()">Close Widget</button>
-            <button class="button" onclick="setVisitorInfo()">Set Visitor Info</button>
-            <button class="button" onclick="testNotification()">Test Notification</button>
+            <h2>👤 User Configuration</h2>
+            <input type="email" id="userEmail" placeholder="Enter email" value="test@example.com">
+            <input type="text" id="userName" placeholder="Enter name" value="Test User">
+            <button class="button" onclick="setUserInfo()">Set User Info</button>
+            <div class="code" id="userInfo">User info will appear here...</div>
         </div>
-        
+
         <div class="section">
-            <h2>👤 Visitor Information</h2>
-            <input type="email" id="visitorEmail" placeholder="Enter email" value="test@example.com">
-            <input type="text" id="visitorName" placeholder="Enter name" value="Test User">
-            <button class="button" onclick="updateVisitorInfo()">Update Info</button>
+            <h2>🔧 Backend API Tests</h2>
+            <button class="button" onclick="testHealthEndpoint()">Test Health</button>
+            <button class="button" onclick="testConversationAPI()">Test Conversations</button>
+            <button class="button" onclick="testMessagesAPI()">Test Messages</button>
+            <button class="button" onclick="runAllTests()">Run All Tests</button>
+            <div id="apiTestResults"></div>
         </div>
-        
-        <div class="section">
-            <h2>🔧 Configuration</h2>
-            <div class="code" id="configDisplay">Loading configuration...</div>
-        </div>
-        
+
         <div class="section">
             <h2>📝 Event Log</h2>
             <div id="eventLog" class="code" style="height: 200px; overflow-y: auto;"></div>
             <button class="button" onclick="clearLog()">Clear Log</button>
         </div>
-        
+
         <div class="section">
-            <h2>🧪 Integration Tests</h2>
-            <button class="button" onclick="runTests()">Run All Tests</button>
-            <div id="testResults"></div>
+            <h2>💬 Message Simulation</h2>
+            <textarea id="customMessage" placeholder="Enter custom message..." rows="3"></textarea>
+            <br>
+            <button class="button" onclick="simulateAgentMessage()">Simulate Agent Message</button>
+            <button class="button" onclick="simulateTyping()">Simulate Typing</button>
         </div>
     </div>
 
-    <!-- Widget Integration -->
     <script>
-        // Configure widget before loading
+        // Configuration
         window.PRIYO_WIDGET_CONFIG = {
-            apiBaseUrl: 'http://localhost:3000/api',
-            socketUrl: 'http://localhost:3000',
-            cssUrl: 'http://localhost:3000/widget/styles.css',
-            scriptUrl: 'http://localhost:3000/widget/priyo-widget-integrated.js'
+            apiBaseUrl: 'https://priyo-chat-64wg.onrender.com/api',
+            socketUrl: 'https://priyo-chat-64wg.onrender.com',
+            widgetId: 'test-widget-' + Date.now()
         };
-        
+
         // Event logging
         function logEvent(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
@@ -156,7 +177,7 @@
             logElement.scrollTop = logElement.scrollHeight;
             console.log(logEntry);
         }
-        
+
         // Widget control functions
         function openWidget() {
             if (window.PriyoWidget) {
@@ -166,7 +187,7 @@
                 logEvent('Widget not loaded yet', 'error');
             }
         }
-        
+
         function closeWidget() {
             if (window.PriyoWidget) {
                 window.PriyoWidget.close();
@@ -175,132 +196,197 @@
                 logEvent('Widget not loaded yet', 'error');
             }
         }
-        
-        function setVisitorInfo() {
+
+        function sendTestMessage() {
             if (window.PriyoWidget) {
-                window.PriyoWidget.setVisitorInfo('test@example.com', 'Test User');
-                logEvent('Visitor info set', 'success');
+                window.PriyoWidget.sendCustomMessage('This is a test message from the test page');
+                logEvent('Test message sent', 'success');
             } else {
                 logEvent('Widget not loaded yet', 'error');
             }
         }
-        
-        function updateVisitorInfo() {
-            const email = document.getElementById('visitorEmail').value;
-            const name = document.getElementById('visitorName').value;
+
+        function setUserInfo() {
+            const email = document.getElementById('userEmail').value;
+            const name = document.getElementById('userName').value;
             
             if (window.PriyoWidget && email && name) {
-                window.PriyoWidget.setVisitorInfo(email, name);
-                logEvent(`Visitor info updated: ${name} (${email})`, 'success');
+                window.PriyoWidget.setUserInfo(email, name);
+                document.getElementById('userInfo').textContent = `Email: ${email}, Name: ${name}`;
+                logEvent(`User info set: ${name} (${email})`, 'success');
             } else {
                 logEvent('Widget not loaded or missing info', 'error');
             }
         }
-        
-        function testNotification() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification('Priyo Widget Test', {
-                            body: 'This is a test notification from the widget integration.',
-                            icon: 'https://i.imgur.com/4DB1BHj.png'
-                        });
-                        logEvent('Test notification sent', 'success');
-                    } else {
-                        logEvent('Notification permission denied', 'error');
-                    }
-                });
-            } else {
-                logEvent('Notifications not supported', 'error');
-            }
+
+        function clearStorage() {
+            localStorage.removeItem('priyo_user_id');
+            localStorage.removeItem('priyo_user_email');
+            localStorage.removeItem('priyo_user_name');
+            logEvent('Local storage cleared', 'info');
         }
-        
+
         function clearLog() {
             document.getElementById('eventLog').innerHTML = '';
         }
-        
-        // Test functions
-        async function runTests() {
-            const resultsDiv = document.getElementById('testResults');
-            resultsDiv.innerHTML = '<div class="status info">Running tests...</div>';
-            
-            const tests = [
-                { name: 'Widget API Available', test: () => typeof window.PriyoWidget !== 'undefined' },
-                { name: 'Widget Methods Exist', test: () => window.PriyoWidget && typeof window.PriyoWidget.open === 'function' },
-                { name: 'Backend API Reachable', test: async () => {
-                    try {
-                        const response = await fetch('http://localhost:3000/api/health');
-                        return response.ok;
-                    } catch (e) {
-                        return false;
-                    }
-                }},
-                { name: 'Socket.IO Available', test: () => typeof io !== 'undefined' },
-                { name: 'Local Storage Available', test: () => typeof localStorage !== 'undefined' },
-                { name: 'Notification API Available', test: () => 'Notification' in window }
-            ];
-            
-            let results = '';
-            for (const test of tests) {
-                try {
-                    const result = await test.test();
-                    const status = result ? 'success' : 'error';
-                    const icon = result ? '✅' : '❌';
-                    results += `<div class="status ${status}">${icon} ${test.name}</div>`;
-                    logEvent(`Test: ${test.name} - ${result ? 'PASS' : 'FAIL'}`, status);
-                } catch (error) {
-                    results += `<div class="status error">❌ ${test.name} - Error: ${error.message}</div>`;
-                    logEvent(`Test: ${test.name} - ERROR: ${error.message}`, 'error');
-                }
+
+        // API Testing functions
+        async function testHealthEndpoint() {
+            try {
+                const response = await fetch(`${window.PRIYO_WIDGET_CONFIG.apiBaseUrl}/health`);
+                const data = await response.json();
+                updateStatus('backendStatus', response.ok ? 'success' : 'error', 
+                    response.ok ? '✅ Backend API healthy' : '❌ Backend API error');
+                logEvent(`Health check: ${response.status} - ${JSON.stringify(data)}`, response.ok ? 'success' : 'error');
+            } catch (error) {
+                updateStatus('backendStatus', 'error', '❌ Backend connection failed');
+                logEvent(`Health check failed: ${error.message}`, 'error');
             }
-            
-            resultsDiv.innerHTML = results;
         }
-        
-        // Widget ready event listener
-        window.addEventListener('priyoWidgetReady', (event) => {
-            document.getElementById('widgetStatus').innerHTML = '✅ Widget loaded successfully';
-            document.getElementById('widgetStatus').className = 'status success';
-            logEvent('Widget ready event received', 'success');
-            
-            // Display configuration
-            document.getElementById('configDisplay').innerHTML = JSON.stringify(window.PRIYO_WIDGET_CONFIG, null, 2);
-        });
-        
-        // Check connection status
-        function checkConnection() {
-            fetch('http://localhost:3000/api/health')
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById('connectionStatus').innerHTML = '✅ Backend connection successful';
-                        document.getElementById('connectionStatus').className = 'status success';
-                        logEvent('Backend connection verified', 'success');
-                    } else {
-                        throw new Error('Backend responded with error');
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('connectionStatus').innerHTML = '❌ Backend connection failed';
-                    document.getElementById('connectionStatus').className = 'status error';
-                    logEvent('Backend connection failed: ' + error.message, 'error');
+
+        async function testConversationAPI() {
+            try {
+                const response = await fetch(`${window.PRIYO_WIDGET_CONFIG.apiBaseUrl}/conversations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: 'test-user-' + Date.now(),
+                        widgetId: window.PRIYO_WIDGET_CONFIG.widgetId,
+                        userAgent: navigator.userAgent,
+                        url: window.location.href
+                    })
                 });
+                const data = await response.json();
+                logEvent(`Conversation API: ${response.status} - ${JSON.stringify(data)}`, response.ok ? 'success' : 'error');
+            } catch (error) {
+                logEvent(`Conversation API failed: ${error.message}`, 'error');
+            }
         }
-        
+
+        async function testMessagesAPI() {
+            try {
+                const response = await fetch(`${window.PRIYO_WIDGET_CONFIG.apiBaseUrl}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conversationId: 'test-conversation',
+                        userId: 'test-user',
+                        text: 'Test message from API test',
+                        type: 'user'
+                    })
+                });
+                const data = await response.json();
+                logEvent(`Messages API: ${response.status} - ${JSON.stringify(data)}`, response.ok ? 'success' : 'error');
+            } catch (error) {
+                logEvent(`Messages API failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            logEvent('Running all API tests...', 'info');
+            await testHealthEndpoint();
+            await testConversationAPI();
+            await testMessagesAPI();
+            logEvent('All tests completed', 'info');
+        }
+
+        function simulateAgentMessage() {
+            const message = document.getElementById('customMessage').value || 'This is a simulated agent message';
+            if (window.PriyoWidget && window.PriyoWidget.socket) {
+                // Simulate incoming message
+                window.PriyoWidget.handleIncomingMessage({
+                    text: message,
+                    sender: 'agent',
+                    timestamp: new Date().toISOString(),
+                    conversationId: window.PriyoWidget.conversationId
+                });
+                logEvent('Simulated agent message sent', 'success');
+            } else {
+                logEvent('Widget or socket not available', 'error');
+            }
+        }
+
+        function simulateTyping() {
+            if (window.PriyoWidget) {
+                window.PriyoWidget.showTypingIndicator(true);
+                setTimeout(() => {
+                    window.PriyoWidget.showTypingIndicator(false);
+                }, 3000);
+                logEvent('Simulated typing indicator', 'success');
+            } else {
+                logEvent('Widget not available', 'error');
+            }
+        }
+
+        function updateStatus(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+
+        // Check WebSocket connection
+        function checkWebSocket() {
+            try {
+                const socket = io(window.PRIYO_WIDGET_CONFIG.socketUrl, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 5000
+                });
+
+                socket.on('connect', () => {
+                    updateStatus('socketStatus', 'success', '✅ WebSocket connected');
+                    logEvent('WebSocket connection successful', 'success');
+                    socket.disconnect();
+                });
+
+                socket.on('connect_error', (error) => {
+                    updateStatus('socketStatus', 'error', '❌ WebSocket connection failed');
+                    logEvent(`WebSocket error: ${error.message}`, 'error');
+                });
+
+                setTimeout(() => {
+                    if (!socket.connected) {
+                        updateStatus('socketStatus', 'error', '❌ WebSocket timeout');
+                        logEvent('WebSocket connection timeout', 'error');
+                    }
+                }, 5000);
+            } catch (error) {
+                updateStatus('socketStatus', 'error', '❌ WebSocket not available');
+                logEvent(`WebSocket check failed: ${error.message}`, 'error');
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             logEvent('Test page loaded', 'info');
-            checkConnection();
             
-            // Check if widget loads within 5 seconds
+            // Test backend connection
+            testHealthEndpoint();
+            
+            // Check if Socket.IO is available
+            if (typeof io !== 'undefined') {
+                checkWebSocket();
+            } else {
+                updateStatus('socketStatus', 'error', '❌ Socket.IO not loaded');
+            }
+            
+            // Check widget status
             setTimeout(() => {
-                if (!window.PriyoWidget) {
-                    document.getElementById('widgetStatus').innerHTML = '❌ Widget failed to load';
-                    document.getElementById('widgetStatus').className = 'status error';
-                    logEvent('Widget failed to load within 5 seconds', 'error');
+                if (window.PriyoWidget) {
+                    updateStatus('widgetStatus', 'success', '✅ Widget loaded successfully');
+                    logEvent('Widget initialization confirmed', 'success');
+                } else {
+                    updateStatus('widgetStatus', 'error', '❌ Widget failed to load');
+                    logEvent('Widget failed to load within 3 seconds', 'error');
                 }
-            }, 5000);
+            }, 3000);
+
+            // Display current configuration
+            logEvent(`Config: ${JSON.stringify(window.PRIYO_WIDGET_CONFIG)}`, 'info');
         });
     </script>
+    
+    <!-- Load Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     
     <!-- Load the widget -->
     <script src="embed-integrated.js" async defer></script>
