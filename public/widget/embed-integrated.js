@@ -1,8 +1,8 @@
 (function() {
   // Widget configuration
   const config = {
-    apiBaseUrl: window.PRIYO_WIDGET_CONFIG?.apiBaseUrl || 'https://priyo-chat-backend-64wg.onrender.com/api',
-    socketUrl: window.PRIYO_WIDGET_CONFIG?.socketUrl || 'https://priyo-chat-backend-64wg.onrender.com',
+    apiBaseUrl: window.PRIYO_WIDGET_CONFIG?.apiBaseUrl || 'https://priyo-chat-64wg.onrender.com/api',
+    socketUrl: window.PRIYO_WIDGET_CONFIG?.socketUrl || 'https://priyo-chat-64wg.onrender.com',
     widgetId: window.PRIYO_WIDGET_CONFIG?.widgetId || 'default-widget'
   };
 
