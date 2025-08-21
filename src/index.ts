@@ -66,6 +66,26 @@ async function initializeApp() {
     const uploadsDir = process.env.UPLOAD_DIR || 'uploads';
     app.use('/uploads', express.static(path.join(process.cwd(), uploadsDir)));
 
+    // Root endpoint
+    app.get('/', (req, res) => {
+      res.json({
+        name: 'Priyo Chat Backend API',
+        version: '1.0.0',
+        status: 'Running',
+        endpoints: {
+          health: '/health',
+          auth: '/api/auth',
+          conversations: '/api/conversations',
+          messages: '/api/messages',
+          upload: '/api/upload',
+          widget: '/api/widget',
+          aiAgent: '/api/ai-agent'
+        },
+        widget: '/widget/test.html',
+        timestamp: new Date().toISOString()
+      });
+    });
+
     // Health check endpoint
     app.get('/health', (req, res) => {
       res.json({
