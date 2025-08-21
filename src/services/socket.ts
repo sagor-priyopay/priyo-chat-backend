@@ -18,7 +18,10 @@ export class SocketService {
 
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+        origin: [
+          process.env.CORS_ORIGIN || "http://localhost:3000",
+          "http://localhost:3002"  // Added frontend origin
+        ],
         methods: ["GET", "POST"],
         credentials: true,
       },

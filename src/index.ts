@@ -61,7 +61,8 @@ async function startServer(): Promise<void> {
       origin: [
         process.env.CORS_ORIGIN || "http://localhost:3000",
         "http://127.0.0.1:44693",
-        "http://localhost:44693"
+        "http://localhost:44693",
+        "http://localhost:3002"
       ],
       credentials: true,
     }));
