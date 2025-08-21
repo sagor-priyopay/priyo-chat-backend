@@ -13,7 +13,8 @@ const aiAgentSchemas = {
     conversationId: Joi.string().required(),
     message: Joi.string().required().min(1).max(5000),
     userId: Joi.string().optional(),
-    metadata: Joi.object().optional()
+    // Accept object or JSON string and we will parse strings
+    metadata: Joi.alternatives(Joi.object(), Joi.string()).optional()
   }),
   trigger: Joi.object({
     conversationId: Joi.string().required(),
@@ -47,8 +48,16 @@ interface N8nTriggerPayload {
 // Webhook endpoint for receiving AI responses from n8n
 router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Request, res: Response) => {
   try {
-    const { conversationId, message, userId, metadata } = req.body as N8nWebhookPayload;
-    
+    let { conversationId, message, userId, metadata } = req.body as any;
+
+    // Coerce metadata string to object if needed
+    if (typeof metadata === 'string') {
+      try { metadata = JSON.parse(metadata); } catch { metadata = undefined; }
+    }
+    if (metadata == null) {
+      metadata = { source: 'n8n', deliveredAt: new Date().toISOString() };
+    }
+
     console.log('AI Agent webhook received:', { conversationId, message, metadata });
 
     // Verify conversation exists
@@ -179,7 +188,12 @@ router.post('/trigger', validateRequest(aiAgentSchemas.trigger), async (req: Req
         id: p.user.id,
         username: p.user.username,
         role: p.user.role
-      }))
+      })),
+      // Default metadata passed to n8n for convenience
+      metadata: {
+        source: 'widget',
+        triggerAt: new Date().toISOString()
+      }
     };
 
     // Send to n8n webhook (you'll need to configure this URL)
