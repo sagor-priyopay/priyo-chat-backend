@@ -113,20 +113,7 @@ router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Req
       metadata: metadata
     });
 
-    // Also emit to specific participants
-    conversation.participants.forEach((participant: any) => {
-      socketService.emitToUser(participant.userId, 'message:new', {
-        id: aiMessage.id,
-        content: aiMessage.content,
-        senderId: aiMessage.senderId,
-        senderUsername: aiUser.username,
-        timestamp: aiMessage.createdAt,
-        conversationId,
-        type: aiMessage.type,
-        isAI: true,
-        metadata: metadata
-      });
-    });
+    // Removed per-user emit to avoid duplicate messages; room emit above is sufficient
 
     res.json({
       success: true,
