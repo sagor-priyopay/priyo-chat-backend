@@ -90,21 +90,36 @@ async function getOrCreateConversation() {
 
 async function sendMessageToBackend(message) {
   try {
+    // Ensure we have a conversation
+    if (!WIDGET_CONFIG.conversationId) {
+      const conv = await getOrCreateConversation();
+      if (!conv || !conv.id) {
+        console.error('No conversation available for sending message');
+        return false;
+      }
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (WIDGET_CONFIG.token) headers['Authorization'] = `Bearer ${WIDGET_CONFIG.token}`;
+
+    const payload = {
+      message,
+      conversationId: WIDGET_CONFIG.conversationId,
+      visitorId: getVisitorId()
+    };
+
     const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/message`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WIDGET_CONFIG.token}`
-      },
-      body: JSON.stringify({
-        message,
-        conversationId: WIDGET_CONFIG.conversationId,
-        visitorId: WIDGET_CONFIG.visitorId
-      })
+      headers,
+      body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
-    return data.success;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error('Message POST failed:', { status: response.status, body: data, payload });
+      return false;
+    }
+    return !!data.success;
   } catch (error) {
     console.error('Failed to send message:', error);
     return false;
