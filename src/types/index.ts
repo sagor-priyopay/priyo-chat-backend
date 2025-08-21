@@ -11,6 +11,10 @@ export interface AuthenticatedRequest extends Request {
     visitorId?: string;
   };
   file?: any;
+  body: any;
+  params: any;
+  query: any;
+  headers: any;
 }
 
 export interface JWTPayload {
