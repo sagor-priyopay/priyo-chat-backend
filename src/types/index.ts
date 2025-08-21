@@ -6,6 +6,9 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     username: string;
     role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
+    // Optional fields for backward compatibility and widget support
+    userId?: string;
+    visitorId?: string;
   };
   file?: any;
   body: any;
@@ -19,6 +22,8 @@ export interface JWTPayload {
   email: string;
   username: string;
   role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
+  visitorId?: string;
+  isWidget?: boolean;
 }
 
 export interface TokenPair {

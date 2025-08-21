@@ -69,12 +69,12 @@ async function authenticateWidget() {
 
 async function getOrCreateConversation() {
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (WIDGET_CONFIG.token) headers['Authorization'] = `Bearer ${WIDGET_CONFIG.token}`;
     const response = await fetch(`${WIDGET_CONFIG.apiBaseUrl}/widget/conversation`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WIDGET_CONFIG.token}`
-      }
+      headers,
+      body: JSON.stringify({ visitorId: getVisitorId() })
     });
 
     const data = await response.json();

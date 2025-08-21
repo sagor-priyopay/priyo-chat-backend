@@ -55,6 +55,9 @@ export const widgetSchemas = {
     email: Joi.string().email().optional(),
     name: Joi.string().optional()
   }),
+  conversation: Joi.object({
+    visitorId: Joi.string().required()
+  }),
   message: Joi.object({
     message: Joi.string().required().min(1).max(5000),
     conversationId: Joi.string().required(),

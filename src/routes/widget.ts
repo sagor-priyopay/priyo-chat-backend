@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import { widgetSchemas } from '../utils/validation';
 import { DatabaseService } from '../services/database';
@@ -19,6 +18,10 @@ interface WidgetAuthRequest {
 interface WidgetMessageRequest {
   message: string;
   conversationId?: string;
+  visitorId: string;
+}
+
+interface WidgetConversationRequest {
   visitorId: string;
 }
 
@@ -77,11 +80,25 @@ router.post('/auth', validateRequest(widgetSchemas.auth), async (req: Request, r
   }
 });
 
-// Start or continue conversation for widget
-router.post('/conversation', authenticateToken, async (req: Request, res: Response) => {
+// Start or continue conversation for widget (no auth, use visitorId)
+router.post('/conversation', validateRequest(widgetSchemas.conversation), async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
-    const visitorId = (req as any).user.visitorId;
+    const { visitorId } = req.body as WidgetConversationRequest;
+
+    // Derive or create user from visitorId
+    const email = `visitor_${visitorId}@widget.local`;
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          username: `Visitor_${visitorId}`,
+          password: 'widget_user',
+          role: 'CUSTOMER'
+        }
+      });
+    }
+    const userId = user.id;
 
     // Find existing conversation for this visitor or create new one
     let conversation = await prisma.conversation.findFirst({
@@ -105,7 +122,7 @@ router.post('/conversation', authenticateToken, async (req: Request, res: Respon
 
     if (!conversation) {
       // Create new conversation
-      let conversation = await prisma.conversation.create({
+      conversation = await prisma.conversation.create({
         data: {
           name: `Widget Chat - ${visitorId}`,
           type: 'DIRECT',
@@ -165,11 +182,18 @@ router.post('/conversation', authenticateToken, async (req: Request, res: Respon
   }
 });
 
-// Send message from widget
-router.post('/message', authenticateToken, validateRequest(widgetSchemas.message), async (req: Request, res: Response) => {
+// Send message from widget (no auth, use visitorId)
+router.post('/message', validateRequest(widgetSchemas.message), async (req: Request, res: Response) => {
   try {
-    const { message, conversationId } = req.body as WidgetMessageRequest;
-    const userId = (req as any).user.userId;
+    const { message, conversationId, visitorId } = req.body as WidgetMessageRequest;
+
+    // Derive user from visitorId
+    const email = `visitor_${visitorId}@widget.local`;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Unknown visitor. Start a conversation first.' });
+    }
+    const userId = user.id;
 
     // Verify user is participant in conversation
     const conversation = await prisma.conversation.findFirst({
@@ -253,10 +277,18 @@ router.post('/message', authenticateToken, validateRequest(widgetSchemas.message
 });
 
 // Get conversation messages for widget
-router.get('/conversation/:id/messages', authenticateToken, async (req: Request, res: Response) => {
+router.get('/conversation/:id/messages', async (req: Request, res: Response) => {
   try {
     const conversationId = req.params.id;
-    const userId = (req as any).user.userId;
+    const { visitorId } = req.query as any;
+
+    // Derive user from visitorId
+    const email = `visitor_${visitorId}@widget.local`;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Unknown visitor. Start a conversation first.' });
+    }
+    const userId = user.id;
 
     // Verify user is participant
     const conversation = await prisma.conversation.findFirst({
