@@ -228,4 +228,5 @@ function initChatWidget() {
   };
 }
 
-initChatWidget();
+// Make function globally accessible for embed script
+window.initChatWidget = initChatWidget;

@@ -86,16 +86,21 @@
   var script = document.createElement('script');
   script.src = config.scriptUrl;
   script.onload = function() {
-    // Widget is now ready
-    if (typeof window.PriyoWidget !== 'undefined') {
-      console.log('Priyo Widget loaded and integrated with backend');
-      
-      // Trigger custom event for integration
-      const event = new CustomEvent('priyoWidgetReady', { 
-        detail: { widget: window.PriyoWidget } 
-      });
-      window.dispatchEvent(event);
-    }
+    // Wait a bit for DOM to settle, then initialize
+    setTimeout(() => {
+      if (typeof initChatWidget === 'function') {
+        initChatWidget();
+        console.log('Priyo Widget initialized successfully');
+        
+        // Trigger custom event for integration
+        const event = new CustomEvent('priyoWidgetReady', { 
+          detail: { widget: window.PriyoWidget } 
+        });
+        window.dispatchEvent(event);
+      } else {
+        console.error('initChatWidget function not found');
+      }
+    }, 100);
   };
   document.body.appendChild(script);
 })();
