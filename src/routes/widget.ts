@@ -236,6 +236,16 @@ router.post('/message', validateRequest(widgetSchemas.message), async (req: Requ
 
     // Trigger n8n AI agent for automatic response
     try {
+      // Show typing indicator for AI while processing
+      try {
+        SocketService.getInstance().emitToConversation(conversationId, 'typing:start', {
+          conversationId,
+          userId: 'ai-agent',
+          username: 'Priyo AI',
+          senderRole: 'AGENT'
+        });
+      } catch {}
+
       const n8nTriggerUrl = `${req.protocol}://${req.get('host')}/api/ai-agent/trigger`;
       
       await fetch(n8nTriggerUrl, {

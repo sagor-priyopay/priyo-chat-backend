@@ -89,15 +89,26 @@ router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Req
       });
     }
 
-    // Create AI response message
+    // Create AI response message (append signature)
     const aiMessage = await prisma.message.create({
       data: {
-        content: message,
+        content: `${message} - Priyo AI`,
         senderId: aiUser.id,
         conversationId,
         type: 'TEXT'
       }
     });
+
+    // Stop typing indicator (if any)
+    try {
+      const socketService = SocketService.getInstance();
+      socketService.emitToConversation(conversationId, 'typing:stop', {
+        conversationId,
+        userId: aiUser.id,
+        username: 'Priyo AI',
+        senderRole: 'AGENT'
+      });
+    } catch {}
 
     // Emit to WebSocket for real-time delivery
     const socketService = SocketService.getInstance();
@@ -106,6 +117,7 @@ router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Req
       content: aiMessage.content,
       senderId: aiMessage.senderId,
       senderUsername: aiUser.username,
+      senderRole: 'AGENT',
       timestamp: aiMessage.createdAt,
       conversationId,
       type: aiMessage.type,
