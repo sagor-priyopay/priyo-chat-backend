@@ -80,6 +80,10 @@ async function getOrCreateConversation() {
     const data = await response.json();
     if (data.success) {
       WIDGET_CONFIG.conversationId = data.conversation.id;
+      // Join the conversation room if socket is connected
+      if (WIDGET_CONFIG.socket && WIDGET_CONFIG.socket.connected && WIDGET_CONFIG.conversationId) {
+        WIDGET_CONFIG.socket.emit('conversation:join', WIDGET_CONFIG.conversationId);
+      }
       return data.conversation;
     }
   } catch (error) {
