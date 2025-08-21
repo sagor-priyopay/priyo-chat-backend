@@ -37,14 +37,24 @@ async function authenticateWidget() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        visitorId: getVisitorId(),
-        email: localStorage.getItem('priyo_visitor_email'),
-        name: localStorage.getItem('priyo_visitor_name')
-      })
+      body: (() => {
+        const payload = { visitorId: getVisitorId() };
+        const email = localStorage.getItem('priyo_visitor_email');
+        const name = localStorage.getItem('priyo_visitor_name');
+        if (email && email.trim().length) payload.email = email.trim();
+        if (name && name.trim().length) payload.name = name.trim();
+        return JSON.stringify(payload);
+      })()
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error('Auth failed:', {
+        status: response.status,
+        body: data
+      });
+      return false;
+    }
     if (data.success) {
       WIDGET_CONFIG.token = data.token;
       WIDGET_CONFIG.isAuthenticated = true;
