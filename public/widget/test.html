@@ -246,14 +246,11 @@
 
         async function testConversationAPI() {
             try {
-                const response = await fetch(`${window.PRIYO_WIDGET_CONFIG.apiBaseUrl}/conversations`, {
+                const response = await fetch(`${window.PRIYO_WIDGET_CONFIG.apiBaseUrl}/widget/conversation`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        userId: 'test-user-' + Date.now(),
-                        widgetId: window.PRIYO_WIDGET_CONFIG.widgetId,
-                        userAgent: navigator.userAgent,
-                        url: window.location.href
+                        visitorId: 'test-visitor-' + Date.now()
                     })
                 });
                 const data = await response.json();
