@@ -37,6 +37,21 @@ export class SocketService {
     this.io.use(async (socket, next) => {
       try {
         const token = socket.handshake.auth.token;
+        const visitorId = socket.handshake.auth.visitorId;
+        
+        // Allow widget connections without authentication
+        if (!token && visitorId) {
+          socket.data.user = {
+            id: visitorId,
+            email: `visitor_${visitorId}@widget.local`,
+            username: `Visitor_${visitorId.slice(-6)}`,
+            role: 'CUSTOMER',
+            socketId: socket.id,
+            isWidget: true,
+          };
+          return next();
+        }
+        
         if (!token) {
           return next(new Error('Authentication token required'));
         }

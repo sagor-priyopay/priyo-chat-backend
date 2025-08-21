@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
+import logger from './utils/logger';
+import { requestId, securityHeaders, sanitizeInput, auditLog } from './middleware/security';
 
 import { DatabaseService } from './services/database';
 import { SocketService } from './services/socket';
@@ -52,9 +54,40 @@ async function startServer(): Promise<void> {
     // Initialize Socket.IO
     socketService = new SocketService(server);
 
-    // Middleware
+    // Security middleware
     app.use(helmet({
-      crossOriginResourcePolicy: { policy: "cross-origin" }
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+      contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "blob:", "https:"],
+          connectSrc: ["'self'", "wss:", "https:"],
+          fontSrc: ["'self'", "https:"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      } : {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "blob:"],
+          connectSrc: ["'self'", "ws:", "wss:", "https://priyo-chat-64wg.onrender.com"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      hsts: process.env.NODE_ENV === 'production' ? {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+      } : false,
     }));
     
     app.use(cors({
@@ -85,14 +118,30 @@ async function startServer(): Promise<void> {
     // Handle preflight for all routes
     app.options('*', cors());
 
-    // Rate limiting (disabled for development)
-    // const limiter = rateLimit({
-    //   windowMs: 15 * 60 * 1000, // 15 minutes
-    //   max: 100, // limit each IP to 100 requests per windowMs
-    //   message: 'Too many requests from this IP, please try again later.',
-    //   trustProxy: false,
-    // });
-    // app.use(limiter);
+    // Rate limiting
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+      message: {
+        error: 'Too many requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+    
+    // Set trust proxy for production
+    if (process.env.NODE_ENV === 'production') {
+      app.set('trust proxy', 1);
+    }
+    
+    app.use(limiter);
+
+    // Security middleware
+    app.use(requestId);
+    app.use(securityHeaders);
+    app.use(sanitizeInput);
+    app.use(auditLog);
 
     // Body parsing middleware
     app.use(express.json({ limit: '10mb' }));
@@ -122,13 +171,14 @@ async function startServer(): Promise<void> {
       });
     });
 
-    // Health check endpoint
-    app.get('/health', (req, res) => {
-      res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-      });
+    // Health check endpoints
+    const { MonitoringService } = await import('./utils/monitoring');
+    app.get('/health', MonitoringService.healthCheckEndpoint);
+    app.get('/api/health', MonitoringService.healthCheckEndpoint);
+    
+    // Metrics endpoint for monitoring
+    app.get('/metrics', (req, res) => {
+      res.json(MonitoringService.getMetrics());
     });
 
     // Serve widget static files
@@ -149,18 +199,43 @@ async function startServer(): Promise<void> {
 
     // Global error handler
     app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.error('Global error handler:', error);
+      // Log error details for monitoring
+      console.error('Global error handler:', {
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        url: req.url,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date().toISOString()
+      });
       
       if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ error: 'File too large' });
+        return res.status(413).json({ 
+          error: 'File too large',
+          maxSize: process.env.MAX_FILE_SIZE || '5MB'
+        });
       }
       
       if (error.type === 'entity.parse.failed') {
         return res.status(400).json({ error: 'Invalid JSON in request body' });
       }
 
+      if (error.code === 'EBADCSRFTOKEN') {
+        return res.status(403).json({ error: 'Invalid CSRF token' });
+      }
+
+      // Rate limit error
+      if (error.status === 429) {
+        return res.status(429).json({
+          error: 'Too many requests',
+          retryAfter: error.retryAfter
+        });
+      }
+
       res.status(500).json({ 
         error: 'Internal server error',
+        requestId: req.headers['x-request-id'] || 'unknown',
         ...(process.env.NODE_ENV === 'development' && { details: error.message })
       });
     });

@@ -146,7 +146,10 @@ class PriyoWidget {
   connectWebSocket() {
     try {
       this.socket = io(this.config.socketUrl, {
-        transports: ['websocket', 'polling']
+        transports: ['websocket', 'polling'],
+        auth: {
+          visitorId: this.config.widgetId
+        }
       });
 
       this.socket.on('connect', () => {
