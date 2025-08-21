@@ -168,14 +168,21 @@ router.post('/read', authenticateToken, validateRequest(messageValidation.markAs
     }
 
     // Create read records (ignore duplicates)
-    const readData = messageIds.map((messageId: string) => ({
-      messageId,
-      userId,
-    }));
-
-    await prisma.messageRead.createMany({
-      data: readData
-    });
+    for (const messageId of messageIds) {
+      await prisma.messageRead.upsert({
+        where: {
+          messageId_userId: {
+            messageId,
+            userId,
+          },
+        },
+        update: {},
+        create: {
+          messageId,
+          userId,
+        },
+      });
+    }
 
     res.json({ message: 'Messages marked as read' });
   } catch (error) {

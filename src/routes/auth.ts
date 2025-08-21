@@ -114,14 +114,16 @@ router.post('/login', validateRequest(authValidation.login), async (req: Authent
     });
 
     res.json({
-      message: 'Login successful',
       user: {
         id: user.id,
         email: user.email,
         username: user.username,
         avatar: user.avatar,
+        role: user.role,
+        isOnline: user.isOnline,
+        lastSeen: user.lastSeen,
+        createdAt: user.createdAt,
       },
-      tokens,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -218,6 +220,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
         email: true,
         username: true,
         avatar: true,
+        role: true,
         isOnline: true,
         lastSeen: true,
         createdAt: true,
