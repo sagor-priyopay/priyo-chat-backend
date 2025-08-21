@@ -7,9 +7,9 @@ export async function initializeDatabase(): Promise<void> {
   try {
     console.log('🔄 Initializing database...');
     
-    // Run Prisma migrations
-    await execAsync('npx prisma migrate deploy');
-    console.log('✅ Database migrations completed');
+    // Push Prisma schema to database
+    await execAsync('npx prisma db push --accept-data-loss');
+    console.log('✅ Database schema pushed');
     
     // Generate Prisma client
     await execAsync('npx prisma generate');
