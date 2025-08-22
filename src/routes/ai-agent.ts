@@ -123,7 +123,7 @@ router.post('/webhook', authenticateApiKey, validateRequest(aiAgentSchemas.webho
 
     // Emit to WebSocket for real-time delivery
     const socketService = SocketService.getInstance();
-    socketService.emitToConversation(conversationId, 'message:new', {
+    socketService.emitToConversation(conversationId, 'new-message', {
       id: aiMessage.id,
       content: aiMessage.content,
       senderId: aiMessage.senderId,

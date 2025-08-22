@@ -224,7 +224,7 @@ router.post('/message', validateRequest(widgetSchemas.message), async (req: Requ
     });
 
     // Emit to WebSocket
-    SocketService.getInstance().emitToConversation(conversationId, 'message:new', {
+    SocketService.getInstance().emitToConversation(conversationId, 'new-message', {
       id: newMessage.id,
       content: newMessage.content,
       sender: newMessage.sender.username,
