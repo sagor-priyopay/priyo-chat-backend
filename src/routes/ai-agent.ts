@@ -125,7 +125,9 @@ router.post('/webhook', authenticateApiKey, validateRequest(aiAgentSchemas.webho
     const socketService = SocketService.getInstance();
     socketService.emitToConversation(conversationId, 'new-message', {
       id: aiMessage.id,
+      text: aiMessage.content,  // Widget expects 'text' property
       content: aiMessage.content,
+      sender: 'bot',  // Widget expects 'sender' as 'bot' or 'user'
       senderId: aiMessage.senderId,
       senderUsername: aiUser.username,
       senderRole: 'AGENT',

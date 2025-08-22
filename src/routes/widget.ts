@@ -226,12 +226,16 @@ router.post('/message', validateRequest(widgetSchemas.message), async (req: Requ
     // Emit to WebSocket
     SocketService.getInstance().emitToConversation(conversationId, 'new-message', {
       id: newMessage.id,
+      text: newMessage.content,  // Widget expects 'text' property
       content: newMessage.content,
-      sender: newMessage.sender.username,
-      senderRole: newMessage.sender.role,
+      sender: 'user',  // Widget expects 'sender' as 'bot' or 'user'
+      senderId: newMessage.senderId,
+      senderUsername: user.username,
+      senderRole: 'CUSTOMER',
       timestamp: newMessage.createdAt,
       conversationId,
-      type: newMessage.type
+      type: newMessage.type,
+      isAI: false
     });
 
     // Trigger n8n AI agent for automatic response

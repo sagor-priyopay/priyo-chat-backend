@@ -101,11 +101,13 @@ export class SocketService {
     this.connectedUsers.set(socket.id, user);
     this.userSockets.set(user.id, socket.id);
 
-    // Update user online status
-    this.prisma.user.update({
-      where: { id: user.id },
-      data: { isOnline: true, lastSeen: new Date() },
-    }).catch(console.error);
+    // Update user online status (skip for widget users)
+    if (!user.isWidget) {
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { isOnline: true, lastSeen: new Date() },
+      }).catch(console.error);
+    }
 
     console.log(`User ${user.username} connected with socket ${socket.id}`);
 
@@ -121,17 +123,19 @@ export class SocketService {
       this.connectedUsers.delete(socket.id);
       this.userSockets.delete(user.id);
 
-      // Update user offline status
+      // Update user offline status (skip for widget users)
       try {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { isOnline: false, lastSeen: new Date() },
-        });
+        if (!user.isWidget) {
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { isOnline: false, lastSeen: new Date() },
+          });
 
-        // Clean up typing indicators
-        await this.prisma.typingIndicator.deleteMany({
-          where: { userId: user.id },
-        });
+          // Clean up typing indicators
+          await this.prisma.typingIndicator.deleteMany({
+            where: { userId: user.id },
+          });
+        }
 
         console.log(`User ${user.username} disconnected`);
         
@@ -148,7 +152,14 @@ export class SocketService {
       try {
         const user: SocketUser = socket.data.user;
 
-        // Verify user is participant
+        // Allow widget users to join any conversation
+        if (user.isWidget) {
+          socket.join(conversationId);
+          console.log(`Widget user ${user.username} joined conversation ${conversationId}`);
+          return;
+        }
+
+        // Verify authenticated user is participant
         const participation = await this.prisma.conversationUser.findFirst({
           where: {
             conversationId,

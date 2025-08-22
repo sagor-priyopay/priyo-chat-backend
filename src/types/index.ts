@@ -65,6 +65,7 @@ export interface SocketUser {
   username: string;
   role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
   socketId: string;
+  isWidget?: boolean;
 }
 
 export interface TypingData {
