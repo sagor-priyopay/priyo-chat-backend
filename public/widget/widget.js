@@ -43,9 +43,13 @@ class PriyoWidget {
   }
 
   bindEvents() {
-    // Chat bubble click to open widget
+    // Chat bubble click to toggle widget
     this.elements.chatBubble.addEventListener('click', () => {
-      this.openWidget();
+      if (this.isOpen) {
+        this.closeWidget();
+      } else {
+        this.openWidget();
+      }
     });
 
     // Close button
