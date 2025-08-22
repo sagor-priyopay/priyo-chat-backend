@@ -127,6 +127,8 @@ class PriyoWidget {
         if (data.success) {
           this.conversationId = data.conversation.id;
           this.renderMessages(data.conversation.messages);
+          // Scroll to bottom after rendering messages
+          setTimeout(() => this.scrollToBottom(), 100);
           if (this.socket && this.socket.connected) {
             this.socket.emit('conversation:join', this.conversationId);
           }
@@ -258,6 +260,9 @@ class PriyoWidget {
     this.isOpen = true;
     this.clearNotifications();
     this.elements.chatInput.focus();
+    
+    // Scroll to bottom to show latest messages
+    this.scrollToBottom();
     
     // Mark messages as read
     if (this.conversationId) {
