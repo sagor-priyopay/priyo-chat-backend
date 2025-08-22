@@ -73,7 +73,7 @@ class PriyoWidget {
 
     // Help button
     this.elements.openHelpBtn.addEventListener('click', () => {
-      window.open('https://help.priyopay.com', '_blank');
+      window.open('https://help.priyo.com/en/', '_blank');
     });
 
     // Message input
