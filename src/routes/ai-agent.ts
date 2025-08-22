@@ -45,8 +45,19 @@ interface N8nTriggerPayload {
   userMessage: string;
 }
 
+// Simple API key authentication for n8n webhook
+const authenticateApiKey = (req: Request, res: Response, next: any) => {
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  const validApiKey = process.env.N8N_API_KEY || 'n8n-webhook-key-2024';
+  
+  if (!apiKey || apiKey !== validApiKey) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+  next();
+};
+
 // Webhook endpoint for receiving AI responses from n8n
-router.post('/webhook', validateRequest(aiAgentSchemas.webhook), async (req: Request, res: Response) => {
+router.post('/webhook', authenticateApiKey, validateRequest(aiAgentSchemas.webhook), async (req: Request, res: Response) => {
   try {
     let { conversationId, message, userId, metadata } = req.body as any;
 
