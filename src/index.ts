@@ -184,6 +184,9 @@ async function startServer(): Promise<void> {
 
     // Serve widget static files
     app.use('/widget', express.static(path.join(__dirname, '../public/widget')));
+    
+    // Serve agent dashboard static files
+    app.use('/agent-dashboard', express.static(path.join(__dirname, '../public/agent-dashboard')));
 
     // API routes
     app.use('/api/auth', authRoutes);
@@ -192,6 +195,8 @@ async function startServer(): Promise<void> {
     app.use('/api/upload', uploadRoutes);
     app.use('/api/widget', widgetRoutes);
     app.use('/api/ai-agent', aiAgentRoutes);
+    app.use('/api/agent-dashboard', require('./routes/agent-dashboard').default);
+    app.use('/api/priyo-auth', require('./routes/priyo-auth').default);
 
     // 404 handler
     app.use('*', (req, res) => {

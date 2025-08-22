@@ -68,3 +68,22 @@ export class JWTService {
     }
   }
 }
+
+// Export individual functions for backward compatibility
+const jwtService = new JWTService();
+
+export const generateAccessToken = (payload: JWTPayload): string => {
+  return jwtService.generateTokenPair(payload).accessToken;
+};
+
+export const generateRefreshToken = (payload: JWTPayload): string => {
+  return jwtService.generateTokenPair(payload).refreshToken;
+};
+
+export const verifyAccessToken = (token: string): JWTPayload | null => {
+  return jwtService.verifyAccessToken(token);
+};
+
+export const verifyRefreshToken = (token: string): JWTPayload | null => {
+  return jwtService.verifyRefreshToken(token);
+};
