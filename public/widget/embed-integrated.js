@@ -180,7 +180,7 @@
       background: #000;
       padding: 15px 20px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       border-radius: 20px 20px 0 0;
       flex-shrink: 0;
@@ -197,10 +197,14 @@
       font-size: 26px;
       cursor: pointer;
       user-select: none;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
     }
     #chatCloseBtn:hover {
       color: #ff4d4d;
-      transform: scale(1.15);
+      transform: translateY(-50%) scale(1.15);
       transition: color 0.25s ease, transform 0.25s ease;
     }
 
