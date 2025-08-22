@@ -19,7 +19,8 @@ export class DatabaseService {
       console.log('✅ Database connected successfully');
     } catch (error) {
       console.error('❌ Database connection failed:', error);
-      process.exit(1);
+      console.log('⚠️ Continuing without database connection for now...');
+      // Don't exit process - let server start without DB for debugging
     }
   }
 
