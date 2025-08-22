@@ -128,7 +128,7 @@ class PriyoWidget {
           this.conversationId = data.conversation.id;
           this.renderMessages(data.conversation.messages);
           if (this.socket && this.socket.connected) {
-            this.socket.emit('join-conversation', this.conversationId);
+            this.socket.emit('conversation:join', this.conversationId);
           }
         }
       } else {
@@ -158,7 +158,7 @@ class PriyoWidget {
         this.updateConnectionStatus('Online');
         
         if (this.conversationId) {
-          this.socket.emit('join-conversation', this.conversationId);
+          this.socket.emit('conversation:join', this.conversationId);
         }
       });
 
