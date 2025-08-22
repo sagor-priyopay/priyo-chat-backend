@@ -172,8 +172,12 @@ class PriyoWidget {
         this.handleIncomingMessage(message);
       });
 
-      this.socket.on('agent-typing', (data) => {
-        this.showTypingIndicator(data.isTyping);
+      this.socket.on('typing:start', (data) => {
+        this.showTypingIndicator(true);
+      });
+
+      this.socket.on('typing:stop', (data) => {
+        this.showTypingIndicator(false);
       });
 
       this.socket.on('agent-status', (data) => {
