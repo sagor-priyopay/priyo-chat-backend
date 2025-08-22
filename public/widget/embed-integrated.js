@@ -459,7 +459,7 @@
       height: 8px;
       border-radius: 50%;
       background-color: #999;
-      animation: pulse 1.4s infinite ease-in-out;
+      animation: typingPulse 1.4s infinite ease-in-out;
     }
 
     .typing-dots .dot:nth-child(1) {
@@ -474,7 +474,7 @@
       animation-delay: 0.4s;
     }
 
-    @keyframes pulse {
+    @keyframes typingPulse {
       0%, 60%, 100% {
         opacity: 0.3;
         transform: scale(1);
