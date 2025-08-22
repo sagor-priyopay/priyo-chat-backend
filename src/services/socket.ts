@@ -420,6 +420,7 @@ export class SocketService {
 
   // Widget-specific methods for integration
   public emitToConversation(conversationId: string, event: string, data: any): void {
+    console.log(`Emitting ${event} to conversation ${conversationId}:`, data);
     this.io.to(conversationId).emit(event, data);
   }
 

@@ -173,10 +173,12 @@ class PriyoWidget {
       });
 
       this.socket.on('typing:start', (data) => {
+        console.log('Received typing:start event:', data);
         this.showTypingIndicator(true);
       });
 
       this.socket.on('typing:stop', (data) => {
+        console.log('Received typing:stop event:', data);
         this.showTypingIndicator(false);
       });
 
@@ -392,9 +394,17 @@ class PriyoWidget {
   }
 
   showTypingIndicator(show) {
-    this.elements.typingIndicator.style.display = show ? 'block' : 'none';
-    if (show) {
-      this.scrollToBottom();
+    console.log('showTypingIndicator called with:', show);
+    console.log('typingIndicator element:', this.elements.typingIndicator);
+    
+    if (this.elements.typingIndicator) {
+      this.elements.typingIndicator.style.display = show ? 'block' : 'none';
+      console.log('Set display to:', show ? 'block' : 'none');
+      if (show) {
+        this.scrollToBottom();
+      }
+    } else {
+      console.error('typingIndicator element not found!');
     }
   }
 
