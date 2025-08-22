@@ -440,13 +440,49 @@
       margin-top: 6px;
     }
 
-    .typing-indicator .dots {
-      animation: typing 1.4s infinite;
+    .typing-bubble {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 20px;
+      padding: 12px 16px;
     }
 
-    @keyframes typing {
-      0%, 60%, 100% { opacity: 0; }
-      30% { opacity: 1; }
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .typing-dots .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #999;
+      animation: pulse 1.4s infinite ease-in-out;
+    }
+
+    .typing-dots .dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .typing-dots .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dots .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes pulse {
+      0%, 60%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+      }
+      30% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
     }
 
     @media (max-width: 480px) {

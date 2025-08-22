@@ -405,9 +405,12 @@ class PriyoWidget {
       typingElement.id = 'dynamic-typing-indicator';
       typingElement.innerHTML = `
         <div class="avatar bot"></div>
-        <div class="message-text" style="font-style: italic; color: #666;">
-          <span class="typing-dots">Priyo agent is typing</span>
-          <span class="dots">...</span>
+        <div class="message-text typing-bubble">
+          <div class="typing-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
         </div>
       `;
       
