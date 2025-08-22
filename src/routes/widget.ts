@@ -165,9 +165,11 @@ router.post('/conversation', validateRequest(widgetSchemas.conversation), async 
         title: conversation.name,
         messages: conversation.messages.map(msg => ({
           id: msg.id,
+          text: msg.content,  // Widget expects 'text' property
           content: msg.content,
-          sender: msg.sender.username,
+          sender: msg.sender.role === 'AGENT' ? 'bot' : 'user',  // Map to widget format
           senderRole: msg.sender.role,
+          senderUsername: msg.sender.username,
           timestamp: msg.createdAt,
           type: msg.type
         }))

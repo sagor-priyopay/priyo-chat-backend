@@ -286,12 +286,8 @@ class PriyoWidget {
     this.elements.chatInput.value = '';
     this.elements.sendBtn.disabled = true;
 
-    // Add user message to UI
-    this.addMessage({
-      text: messageText,
-      sender: 'user',
-      timestamp: new Date().toISOString()
-    });
+    // Don't add message to UI here - let WebSocket handle it to avoid duplicates
+    // The backend will emit the message back via WebSocket
 
     try {
       // Send to backend
@@ -309,10 +305,17 @@ class PriyoWidget {
 
       if (!response.ok) {
         this.showError('Failed to send message. Please try again.');
+        // Re-enable send button on error
+        this.elements.sendBtn.disabled = false;
+      } else {
+        // Re-enable send button on success
+        this.elements.sendBtn.disabled = false;
       }
     } catch (error) {
       console.error('Failed to send message:', error);
       this.showError('Failed to send message. Please try again.');
+      // Re-enable send button on error
+      this.elements.sendBtn.disabled = false;
     }
   }
 
