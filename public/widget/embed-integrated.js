@@ -440,6 +440,15 @@
       margin-top: 6px;
     }
 
+    .typing-indicator .dots {
+      animation: typing 1.4s infinite;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0; }
+      30% { opacity: 1; }
+    }
+
     @media (max-width: 480px) {
       #chatWidget {
         width: 95vw;

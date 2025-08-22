@@ -395,16 +395,33 @@ class PriyoWidget {
 
   showTypingIndicator(show) {
     console.log('showTypingIndicator called with:', show);
-    console.log('typingIndicator element:', this.elements.typingIndicator);
     
-    if (this.elements.typingIndicator) {
-      this.elements.typingIndicator.style.display = show ? 'block' : 'none';
-      console.log('Set display to:', show ? 'block' : 'none');
-      if (show) {
-        this.scrollToBottom();
-      }
+    if (show) {
+      // Create typing indicator in chat body instead of using fixed element
+      this.removeTypingIndicator(); // Remove any existing one
+      
+      const typingElement = document.createElement('div');
+      typingElement.className = 'message bot typing-indicator';
+      typingElement.id = 'dynamic-typing-indicator';
+      typingElement.innerHTML = `
+        <div class="avatar bot"></div>
+        <div class="message-text" style="font-style: italic; color: #666;">
+          <span class="typing-dots">Priyo agent is typing</span>
+          <span class="dots">...</span>
+        </div>
+      `;
+      
+      this.elements.chatBody.appendChild(typingElement);
+      this.scrollToBottom();
     } else {
-      console.error('typingIndicator element not found!');
+      this.removeTypingIndicator();
+    }
+  }
+  
+  removeTypingIndicator() {
+    const existingIndicator = document.getElementById('dynamic-typing-indicator');
+    if (existingIndicator) {
+      existingIndicator.remove();
     }
   }
 
