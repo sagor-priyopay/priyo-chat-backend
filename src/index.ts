@@ -197,6 +197,7 @@ async function startServer(): Promise<void> {
     app.use('/api/ai-agent', aiAgentRoutes);
     app.use('/api/agent-dashboard', require('./routes/agent-dashboard').default);
     app.use('/api/priyo-auth', require('./routes/priyo-auth').default);
+    app.use('/api/channels', require('./routes/channels').default);
 
     // 404 handler
     app.use('*', (req, res) => {

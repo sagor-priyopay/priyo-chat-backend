@@ -87,6 +87,7 @@ model Message {
   fileSize       Int?
   conversationId String
   senderId       String
+  metadata       String?     // JSON string for channel-specific data
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
