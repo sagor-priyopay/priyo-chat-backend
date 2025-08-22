@@ -335,6 +335,11 @@ class PriyoWidget {
     const messageElement = document.createElement('div');
     messageElement.className = `message ${message.sender === 'user' ? 'user' : 'bot'}`;
     
+    // Use text or content property, fallback to empty string
+    const messageText = message.text || message.content || '';
+    
+    console.log('Adding message:', { sender: message.sender, text: messageText, fullMessage: message });
+    
     const time = new Date(message.timestamp).toLocaleTimeString([], {
       hour: '2-digit', 
       minute: '2-digit'
@@ -342,12 +347,12 @@ class PriyoWidget {
 
     if (message.sender === 'user') {
       messageElement.innerHTML = `
-        <div class="message-text">${this.escapeHtml(message.text)}</div>
+        <div class="message-text">${this.escapeHtml(messageText)}</div>
       `;
     } else {
       messageElement.innerHTML = `
         <div class="avatar bot"></div>
-        <div class="message-text">${this.escapeHtml(message.text)}</div>
+        <div class="message-text">${this.escapeHtml(messageText)}</div>
       `;
     }
 
