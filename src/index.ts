@@ -90,33 +90,46 @@ async function startServer(): Promise<void> {
       } : false,
     }));
     
+    const envOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
+    const allowedOrigins = new Set([
+      ...envOrigins,
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173', // Vite default port
+      'https://pay.priyo.com',
+      'https://agent.pay.priyo.com',
+      'https://api.pay.priyo.com'
+    ]);
+    
+    // Log allowed origins for debugging
+    console.log('Allowed CORS origins:', Array.from(allowedOrigins));
+    
     app.use(cors({
       origin: (origin, callback) => {
-        const envOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
-        const allowedOrigins = new Set([
-          ...envOrigins,
-          'http://localhost:3000',
-          'http://localhost:3002',
-          'http://127.0.0.1:44693',
-          'http://localhost:44693',
-          'null' // Allow file:// protocol and embedded widgets
-        ]);
-
-        // Allow requests with no origin (like mobile apps or curl)
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-
-        // Explicitly allow file:// which shows as 'null' Origin in browsers
-        if (origin === 'null') return callback(null, true);
-
-        if (allowedOrigins.has(origin)) {
+        
+        // Allow localhost for development
+        if (process.env.NODE_ENV !== 'production' && 
+            (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:'))) {
           return callback(null, true);
         }
-        return callback(new Error(`CORS not allowed for origin: ${origin}`));
+        
+        if (allowedOrigins.has(origin) || allowedOrigins.has('*')) {
+          callback(null, true);
+        } else {
+          console.warn('CORS blocked request from origin:', origin);
+          callback(new Error('Not allowed by CORS'));
+        }
       },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
+      exposedHeaders: ['Content-Range', 'X-Total-Count', 'X-Access-Token', 'X-Refresh-Token'],
+      maxAge: 86400 // 24 hours
     }));
-
-    // Handle preflight for all routes
+    
+    // Handle preflight requests
     app.options('*', cors());
 
     // Rate limiting

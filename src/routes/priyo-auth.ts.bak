@@ -73,16 +73,14 @@ router.post('/customer/verify', async (req: Request, res: Response): Promise<voi
 
     // Generate JWT tokens
     const accessToken = generateAccessToken({
-      userId: user.id,
+      id: user.id,
       email: user.email,
-      username: user.username,
       role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
     });
 
     const refreshToken = generateRefreshToken({
-      userId: user.id,
+      id: user.id,
       email: user.email,
-      username: user.username,
       role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
     });
 
@@ -175,16 +173,14 @@ router.post('/agent/login', async (req: Request, res: Response): Promise<void> =
 
     // Generate JWT tokens
     const accessToken = generateAccessToken({
-      userId: user.id,
+      id: user.id,
       email: user.email,
-      username: user.username,
       role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
     });
 
     const refreshToken = generateRefreshToken({
-      userId: user.id,
+      id: user.id,
       email: user.email,
-      username: user.username,
       role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
     });
 
@@ -215,77 +211,6 @@ router.post('/agent/login', async (req: Request, res: Response): Promise<void> =
     res.status(500).json({
       success: false,
       message: 'Login failed'
-    });
-  }
-});
-
-// Create admin account (super admin only)
-router.post('/admin/create', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, username, password, adminKey } = req.body;
-
-    // Verify admin key (you should set this in environment variables)
-    const expectedAdminKey = process.env.ADMIN_CREATE_KEY || 'your-secret-admin-key';
-    if (adminKey !== expectedAdminKey) {
-      res.status(403).json({
-        success: false,
-        message: 'Invalid admin key'
-      });
-      return;
-    }
-
-    if (!email || !username || !password) {
-      res.status(400).json({
-        success: false,
-        message: 'Email, username, and password are required'
-      });
-      return;
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      res.status(400).json({
-        success: false,
-        message: 'User with this email already exists'
-      });
-      return;
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create admin user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword,
-        role: 'ADMIN',
-        isOnline: false,
-        verified: true
-      }
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Admin account created successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Admin creation error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create admin account'
     });
   }
 });
