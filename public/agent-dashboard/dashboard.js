@@ -112,6 +112,7 @@ class AgentDashboard {
     async handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('error-message');
 
         if (!email || !password) {
             alert('Please fill in all fields');
@@ -119,7 +120,7 @@ class AgentDashboard {
         }
 
         try {
-            const response = await fetch('/api/auth/agent/login', {
+            const response = await fetch('/api/priyo-auth/agent/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -130,25 +131,33 @@ class AgentDashboard {
             const data = await response.json();
 
             if (data.success) {
-                localStorage.setItem('token', data.accessToken);
+                localStorage.setItem('agentToken', data.accessToken);
+                localStorage.setItem('agentUser', JSON.stringify(data.user));
                 this.currentUser = data.user;
                 this.showDashboard();
-                this.connectSocket();
+                this.connectWebSocket();
                 this.loadConversations();
                 this.loadStats();
                 
                 // Show admin tabs if user is admin
                 if (this.currentUser.role === 'ADMIN') {
-                    document.getElementById('adminTabs').style.display = 'flex';
+                    const adminTabs = document.getElementById('adminTabs');
+                    if (adminTabs) {
+                        adminTabs.style.display = 'flex';
+                    }
                 }
             } else {
-                errorDiv.textContent = data.message || 'Login failed';
-                errorDiv.style.display = 'block';
+                if (errorDiv) {
+                    errorDiv.textContent = data.message || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
             }
         } catch (error) {
             console.error('Login error:', error);
-            errorDiv.textContent = 'Connection error. Please try again.';
-            errorDiv.style.display = 'block';
+            if (errorDiv) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.style.display = 'block';
+            }
         }
     }
 
