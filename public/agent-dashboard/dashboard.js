@@ -39,6 +39,19 @@ class AgentDashboard {
             });
         });
 
+        // Admin tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.switchTab(e.target.dataset.tab);
+            });
+        });
+
+        // Create agent form
+        document.getElementById('createAgentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.createAgent();
+        });
+
         // Message input
         const messageInput = document.getElementById('messageInput');
         messageInput.addEventListener('input', (e) => {
@@ -54,7 +67,7 @@ class AgentDashboard {
         });
 
         // Send message button
-        document.getElementById('sendMessageBtn').addEventListener('click', () => {
+        document.getElementById('sendBtn').addEventListener('click', () => {
             this.sendMessage();
         });
 
@@ -99,34 +112,35 @@ class AgentDashboard {
     async handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const errorDiv = document.getElementById('loginError');
+
+        if (!email || !password) {
+            alert('Please fill in all fields');
+            return;
+        }
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('/api/auth/agent/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password })
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                // Check if user is an agent or admin
-                if (data.user.role !== 'AGENT' && data.user.role !== 'ADMIN') {
-                    errorDiv.textContent = 'Access denied. Agent account required.';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-
-                // Store auth data
-                localStorage.setItem('agentToken', data.accessToken);
-                localStorage.setItem('agentUser', JSON.stringify(data.user));
-                
+            if (data.success) {
+                localStorage.setItem('token', data.accessToken);
                 this.currentUser = data.user;
                 this.showDashboard();
-                this.connectWebSocket();
+                this.connectSocket();
+                this.loadConversations();
+                this.loadStats();
+                
+                // Show admin tabs if user is admin
+                if (this.currentUser.role === 'ADMIN') {
+                    document.getElementById('adminTabs').style.display = 'flex';
+                }
             } else {
                 errorDiv.textContent = data.message || 'Login failed';
                 errorDiv.style.display = 'block';

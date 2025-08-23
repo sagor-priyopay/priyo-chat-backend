@@ -10,7 +10,20 @@ const prisma = DatabaseService.getInstance();
 // Get all conversations for agent dashboard
 router.get('/conversations', authenticateToken, requireAgentOrAdmin, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const userRole = req.user!.role;
+    
+    // Admin sees all conversations, agents only see their assigned ones
+    const whereClause = userRole === 'ADMIN' ? {} : {
+      participants: {
+        some: {
+          userId: req.user!.id,
+          leftAt: null
+        }
+      }
+    };
+
     const conversations = await prisma.conversation.findMany({
+      where: whereClause,
       include: {
         participants: {
           include: {
@@ -55,19 +68,29 @@ router.get('/conversations', authenticateToken, requireAgentOrAdmin, async (req:
     // Calculate unread count for each conversation
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conversation) => {
-        const unreadCount = await prisma.message.count({
-          where: {
-            conversationId: conversation.id,
-            senderId: {
-              not: req.user!.id
-            },
-            reads: {
-              none: {
-                userId: req.user!.id
+        // Admin sees total unread messages, agents see their personal unread count
+        const unreadCount = userRole === 'ADMIN' 
+          ? await prisma.message.count({
+              where: {
+                conversationId: conversation.id,
+                reads: {
+                  none: {}
+                }
               }
-            }
-          }
-        });
+            })
+          : await prisma.message.count({
+              where: {
+                conversationId: conversation.id,
+                senderId: {
+                  not: req.user!.id
+                },
+                reads: {
+                  none: {
+                    userId: req.user!.id
+                  }
+                }
+              }
+            });
 
         return {
           ...conversation,
@@ -405,6 +428,214 @@ router.post('/conversations/:conversationId/read', authenticateToken, requireAge
     res.status(500).json({
       success: false,
       message: 'Failed to mark messages as read'
+    });
+  }
+});
+
+// Get all agents (admin only)
+router.get('/agents', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin role required.'
+      });
+      return;
+    }
+
+    const agents = await prisma.user.findMany({
+      where: {
+        role: {
+          in: ['AGENT', 'ADMIN']
+        }
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        isOnline: true,
+        lastSeen: true,
+        createdAt: true,
+        verified: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({
+      success: true,
+      agents
+    });
+  } catch (error) {
+    console.error('Error fetching agents:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch agents'
+    });
+  }
+});
+
+// Create new agent (admin only)
+router.post('/agents', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin role required.'
+      });
+      return;
+    }
+
+    const { email, username, password, role = 'AGENT' } = req.body;
+
+    if (!email || !username || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Email, username, and password are required'
+      });
+      return;
+    }
+
+    if (!['AGENT', 'ADMIN'].includes(role)) {
+      res.status(400).json({
+        success: false,
+        message: 'Role must be either AGENT or ADMIN'
+      });
+      return;
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+      return;
+    }
+
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const newAgent = await prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword,
+        role,
+        isOnline: false,
+        verified: true
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        createdAt: true
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Agent created successfully',
+      agent: newAgent
+    });
+  } catch (error) {
+    console.error('Error creating agent:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create agent'
+    });
+  }
+});
+
+// Update agent (admin only)
+router.put('/agents/:agentId', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin role required.'
+      });
+      return;
+    }
+
+    const { agentId } = req.params;
+    const { username, email, role, isOnline } = req.body;
+
+    const updateData: any = {};
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    if (role && ['AGENT', 'ADMIN', 'CUSTOMER'].includes(role)) updateData.role = role;
+    if (typeof isOnline === 'boolean') updateData.isOnline = isOnline;
+
+    const updatedAgent = await prisma.user.update({
+      where: { id: agentId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        isOnline: true,
+        lastSeen: true
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Agent updated successfully',
+      agent: updatedAgent
+    });
+  } catch (error) {
+    console.error('Error updating agent:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update agent'
+    });
+  }
+});
+
+// Delete agent (admin only)
+router.delete('/agents/:agentId', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin role required.'
+      });
+      return;
+    }
+
+    const { agentId } = req.params;
+
+    // Prevent admin from deleting themselves
+    if (agentId === req.user!.id) {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account'
+      });
+      return;
+    }
+
+    await prisma.user.delete({
+      where: { id: agentId }
+    });
+
+    res.json({
+      success: true,
+      message: 'Agent deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting agent:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete agent'
     });
   }
 });

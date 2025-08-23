@@ -62,23 +62,47 @@
 
         <!-- Main Content -->
         <div class="dashboard-content">
-            <!-- Sidebar - Conversations List -->
-            <aside class="conversations-sidebar">
-                <div class="sidebar-header">
-                    <h3>Active Conversations</h3>
-                    <div class="conversation-stats">
-                        <span id="activeCount" class="stat-badge">0</span>
+            <!-- Admin Tabs (only visible for admins) -->
+            <div id="adminTabs" class="admin-tabs" style="display: none;">
+                <button class="tab-btn active" data-tab="conversations">Conversations</button>
+                <button class="tab-btn" data-tab="agents">Manage Agents</button>
+            </div>
+
+            <!-- Conversations Tab -->
+            <div id="conversationsTab" class="tab-content">
+                <!-- Sidebar - Conversations List -->
+                <aside class="conversations-sidebar">
+                    <div class="sidebar-header">
+                        <h3>Active Conversations</h3>
+                        <div class="conversation-stats">
+                            <span id="activeCount" class="stat-badge">0</span>
+                        </div>
+                    </div>
+                    <div class="conversation-filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="unread">Unread</button>
+                        <button class="filter-btn" data-filter="waiting">Waiting</button>
+                    </div>
+                    <div id="conversationsList" class="conversations-list">
+                        <!-- Conversations will be loaded here -->
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Agents Management Tab (Admin only) -->
+            <div id="agentsTab" class="tab-content" style="display: none;">
+                <div class="agents-management">
+                    <div class="agents-header">
+                        <h3>Agent Management</h3>
+                        <button class="btn-primary" onclick="document.getElementById('createAgentModal').style.display='block'">
+                            <i class="fas fa-plus"></i> Create New Agent
+                        </button>
+                    </div>
+                    <div id="agentsContainer" class="agents-container">
+                        <!-- Agents will be loaded here -->
                     </div>
                 </div>
-                <div class="conversation-filters">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="unread">Unread</button>
-                    <button class="filter-btn" data-filter="waiting">Waiting</button>
-                </div>
-                <div id="conversationsList" class="conversations-list">
-                    <!-- Conversations will be loaded here -->
-                </div>
-            </aside>
+            </div>
 
             <!-- Main Chat Area -->
             <main class="chat-main">
@@ -210,6 +234,41 @@
                 <button id="cancelUpload" class="btn-secondary">Cancel</button>
                 <button id="confirmUpload" class="btn-primary">Upload</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Create Agent Modal -->
+    <div id="createAgentModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Agent</h3>
+                <span class="close" onclick="document.getElementById('createAgentModal').style.display='none'">&times;</span>
+            </div>
+            <form id="createAgentForm">
+                <div class="form-group">
+                    <label for="agentEmail">Email:</label>
+                    <input type="email" id="agentEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="agentUsername">Username:</label>
+                    <input type="text" id="agentUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="agentPassword">Password:</label>
+                    <input type="password" id="agentPassword" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="agentRole">Role:</label>
+                    <select id="agentRole" name="role">
+                        <option value="AGENT">Agent</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="document.getElementById('createAgentModal').style.display='none'">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Agent</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: 'postgresql://priyo_chat_db_91o1_user:6UfCaH2XqAMgTM28XN4sdeFNAMITGdhm@dpg-d2ipud7diees738m0bbg-a.oregon-postgres.render.com/priyo_chat_db_91o1'
+      url: process.env.DATABASE_URL || 'postgresql://localhost:5432/priyo_chat'
     }
   }
 });
