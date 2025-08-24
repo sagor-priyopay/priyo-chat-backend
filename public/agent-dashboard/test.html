@@ -351,9 +351,9 @@
                     const response = await API.login(email, password);
                     
                     if (response.user && response.tokens) {
-                        Utils.storage.set('access_token', response.tokens.accessToken);
-                        Utils.storage.set('refresh_token', response.tokens.refreshToken);
-                        Utils.storage.set('user', JSON.stringify(response.user));
+                        Utils.storage.set('priyo_agent_token', response.tokens.accessToken);
+                        Utils.storage.set('priyo_agent_refresh', response.tokens.refreshToken);
+                        Utils.storage.set('priyo_agent_user', response.user);
                         return { success: true, user: response.user };
                     }
                     
@@ -364,8 +364,8 @@
             },
 
             redirectToDashboard: () => {
-                const user = JSON.parse(Utils.storage.get('user') || '{}');
-                if (user.role === 'ADMIN') {
+                const user = Utils.storage.get('priyo_agent_user');
+                if (user && user.role === 'ADMIN') {
                     window.location.href = './admin.html';
                 } else {
                     window.location.href = './agent.html';

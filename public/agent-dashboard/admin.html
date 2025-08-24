@@ -213,7 +213,7 @@
             }
 
             async init() {
-                if (!Auth.isAuthenticated() || !Auth.hasRole(['ADMIN'])) {
+                if (!Auth.isAuthenticated() || !Auth.isAdmin()) {
                     Auth.redirectToLogin();
                     return;
                 }
