@@ -145,6 +145,30 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             btnText.style.display = 'inline';
             btnSpinner.style.display = 'none';
+            init();
+        }
+    }
+
+    function init() {
+        loginForm.addEventListener('submit', handleLogin);
+        emailInput.addEventListener('blur', validateEmail);
+        passwordInput.addEventListener('blur', validatePassword);
+        
+        // Handle logo error without inline event handler
+        const logoImg = document.getElementById('logoImg');
+        if (logoImg) {
+            logoImg.addEventListener('error', function() {
+                this.style.display = 'none';
+            });
+        }
+        
+        // Check if already logged in
+        if (auth.isAuthenticated()) {
+            if (auth.isAdmin()) {
+                window.location.href = '/agent-dashboard/admin.html';
+            } else {
+                window.location.href = '/agent-dashboard/index.html';
+            }
         }
     }
 
