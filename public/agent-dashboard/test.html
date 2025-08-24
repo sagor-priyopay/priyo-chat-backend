@@ -293,8 +293,18 @@
                 warn: (...args) => console.warn('[WARN]', ...args)
             },
             storage: {
-                get: (key) => localStorage.getItem(key),
-                set: (key, value) => localStorage.setItem(key, value),
+                get: (key) => {
+                    const value = localStorage.getItem(key);
+                    try {
+                        return JSON.parse(value);
+                    } catch {
+                        return value;
+                    }
+                },
+                set: (key, value) => {
+                    const stringValue = typeof value === 'object' ? JSON.stringify(value) : value;
+                    localStorage.setItem(key, stringValue);
+                },
                 remove: (key) => localStorage.removeItem(key)
             },
             isValidEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
