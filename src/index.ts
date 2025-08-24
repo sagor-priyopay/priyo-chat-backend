@@ -276,7 +276,7 @@ async function startServer(): Promise<void> {
       });
     });
 
-    // Start server
+    // Start server - bind to all interfaces for Render
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
