@@ -96,7 +96,7 @@ class AuthManager {
     }
 
     requireAuth() {
-        if (!this.isAuthenticated) {
+        if (!this.isAuthenticated()) {
             window.location.href = '/agent-dashboard/login.html';
             return false;
         }

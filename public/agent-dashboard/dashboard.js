@@ -15,6 +15,14 @@ class Dashboard {
         // Check authentication
         if (!auth.requireAuth()) return;
 
+        // Handle sidebar logo error
+        const sidebarLogo = document.getElementById('sidebarLogo');
+        if (sidebarLogo) {
+            sidebarLogo.addEventListener('error', function() {
+                this.style.display = 'none';
+            });
+        }
+
         // Initialize UI
         this.initializeUI();
         this.setupEventListeners();

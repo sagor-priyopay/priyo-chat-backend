@@ -13,6 +13,14 @@ class AdminDashboard {
         // Check admin authentication
         if (!auth.requireAdmin()) return;
 
+        // Handle admin sidebar logo error
+        const adminSidebarLogo = document.getElementById('adminSidebarLogo');
+        if (adminSidebarLogo) {
+            adminSidebarLogo.addEventListener('error', function() {
+                this.style.display = 'none';
+            });
+        }
+
         this.initializeUI();
         this.setupEventListeners();
         
