@@ -124,6 +124,7 @@ router.post('/login', validateRequest(authValidation.login), async (req: Authent
         lastSeen: user.lastSeen,
         createdAt: user.createdAt,
       },
+      tokens,
     });
   } catch (error) {
     console.error('Login error:', error);
