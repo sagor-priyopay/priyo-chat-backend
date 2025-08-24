@@ -119,16 +119,22 @@ async function startServer(): Promise<void> {
     // Handle preflight requests
     app.options('*', cors());
 
-    // Rate limiting
+    // Rate limiting - more lenient for dashboard usage
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+      max: process.env.NODE_ENV === 'production' ? 500 : 2000, // Increased limits
       message: {
         error: 'Too many requests from this IP, please try again later.',
         retryAfter: '15 minutes'
       },
       standardHeaders: true,
       legacyHeaders: false,
+      skip: (req) => {
+        // Skip rate limiting for static files
+        return req.path.startsWith('/agent-dashboard/') || 
+               req.path.startsWith('/widget/') || 
+               req.path.startsWith('/uploads/');
+      }
     });
     
     // Set trust proxy for production

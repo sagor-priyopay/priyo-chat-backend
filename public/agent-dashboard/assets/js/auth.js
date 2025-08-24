@@ -256,8 +256,9 @@ class AuthService {
      * Redirect to login page
      */
     redirectToLogin() {
-        if (window.location.pathname !== '/agent-dashboard/') {
-            window.location.href = '/agent-dashboard/';
+        if (window.location.pathname !== '/agent-dashboard/' && 
+            window.location.pathname !== '/agent-dashboard/test.html') {
+            window.location.href = '/agent-dashboard/test.html';
         }
     }
 
@@ -377,22 +378,23 @@ class AuthService {
  */
 class RouteGuard {
     static init() {
+        const currentPath = window.location.pathname;
+        const isLoginPage = currentPath === '/agent-dashboard/' || currentPath === '/agent-dashboard/test.html';
+        
         // Check authentication on page load
         if (!Auth.isAuthenticated()) {
-            if (window.location.pathname !== '/agent-dashboard/') {
+            if (!isLoginPage) {
                 Auth.redirectToLogin();
                 return false;
             }
         } else {
             // Redirect authenticated users away from login page
-            if (window.location.pathname === '/agent-dashboard/') {
+            if (isLoginPage) {
                 Auth.redirectToDashboard();
                 return false;
             }
             
             // Check role-based access
-            const currentPath = window.location.pathname;
-            
             if (currentPath.includes('admin.html') && !Auth.isAdmin()) {
                 Utils.showToast(CONFIG.ERRORS.PERMISSION_DENIED, 'error');
                 Auth.redirectToDashboard();
@@ -438,9 +440,11 @@ class RouteGuard {
 // Create singleton instance
 const Auth = new AuthService();
 
-// Initialize route guard on page load
+// Initialize route guard on page load with delay to prevent race conditions
 document.addEventListener('DOMContentLoaded', () => {
-    RouteGuard.init();
+    setTimeout(() => {
+        RouteGuard.init();
+    }, 100);
 });
 
 // Export for use in other modules
