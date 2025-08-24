@@ -5,27 +5,31 @@ services:
   - type: web
     name: priyo-chat
     env: node
-    buildCommand: npm run render-build
+    buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: priyo-chat-db
-          property: connectionString
+        value: postgresql://postgres.qoyriivwlxiddhdnctpq:Priyopay123456@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+      - key: SUPABASE_URL
+        value: https://qoyriivwlxiddhdnctpq.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveXJpaXZ3bHhpZGRoZG5jdHBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwNTgyNjAsImV4cCI6MjA3MTYzNDI2MH0.MXNxG4EbgeTC7pGkUNkT9rNAY3-jOjPNVrk5OiKtXCI
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveXJpaXZ3bHhpZGRoZG5jdHBxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjA1ODI2MCwiZXhwIjoyMDcxNjM0MjYwfQ.m53YE8nMptvgIMhsUtVAWcU61_q_O2XrXT3_k8pV3wI
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_CREATE_KEY
+        generateValue: true
       - key: CORS_ORIGIN
-        value: https://priyo-chat.onrender.com
+        value: https://priyo-chat.onrender.com,https://pay.priyo.com,https://agent.pay.priyo.com
       - key: N8N_WEBHOOK_URL
         value: https://n8n.srv958024.hstgr.cloud/webhook/e985d15f-b2f6-456d-be15-97e0b1544a40/chat
-    plan: free
-
-databases:
-  - name: priyo-chat-db
-    databaseName: priyo_chat
-    user: priyo_user
+      - key: PORT
+        value: 3000
     plan: free
