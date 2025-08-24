@@ -53,22 +53,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await auth.login(email, password);
             
             if (result.success) {
-                // Show success state
-                loginForm.classList.add('login-success');
-                showSuccess('Login successful! Redirecting...');
+                console.log('Login successful, user role:', result.user.role);
                 
-                // Redirect after short delay
-                setTimeout(() => {
-                    redirectToDashboard();
-                }, 1500);
+                // Redirect based on user role
+                if (auth.isAdmin()) {
+                    window.location.href = '/agent-dashboard/admin.html';
+                } else {
+                    // For AGENT and CUSTOMER roles, go to main dashboard
+                    window.location.href = '/agent-dashboard/index.html';
+                }
             } else {
-                throw new Error(result.error || 'Login failed');
+                showError('loginError', result.error || 'Login failed');
             }
         } catch (error) {
             console.error('Login error:', error);
-            showError('generalError', error.message);
-            setLoadingState(false);
+            showError('loginError', 'Login failed. Please try again.');
         }
+        setLoadingState(false);
     }
 
     function validateEmail() {
