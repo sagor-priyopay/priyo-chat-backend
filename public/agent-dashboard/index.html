@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Priyo Chat - Agent Login</title>
+    <link rel="stylesheet" href="./assets/css/main.css">
+    <link rel="icon" type="image/x-icon" href="./assets/images/favicon.ico">
+    <meta name="description" content="Priyo Chat Agent Dashboard - Secure login for customer support agents">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo and Header -->
+            <div class="login-header">
+                <div class="logo">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-icon">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="logo-text">Priyo Chat</span>
+                </div>
+                <h1 class="login-title">Agent Dashboard</h1>
+                <p class="login-subtitle">Sign in to manage customer conversations</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input" 
+                        placeholder="Enter your email"
+                        required
+                        autocomplete="email"
+                    >
+                    <div class="form-error" id="emailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="password-input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="form-error" id="passwordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span class="checkbox-custom"></span>
+                        Remember me for 30 days
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-full" id="loginButton">
+                    <span class="btn-text">Sign In</span>
+                    <div class="btn-loading hidden">
+                        <div class="loading"></div>
+                        <span>Signing in...</span>
+                    </div>
+                </button>
+
+                <div class="form-error" id="formError"></div>
+            </form>
+
+            <!-- Additional Links -->
+            <div class="login-footer">
+                <a href="#" class="forgot-password-link" id="forgotPasswordLink">
+                    Forgot your password?
+                </a>
+                
+                <div class="login-help">
+                    <p class="text-sm text-gray-600">
+                        Need help? Contact your system administrator or 
+                        <a href="mailto:support@priyo.com" class="text-primary-color">support@priyo.com</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="connection-status" id="connectionStatus">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span class="status-text">Checking connection...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Credentials Modal -->
+    <div class="modal-overlay hidden" id="demoModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Demo Credentials</h3>
+                <button class="modal-close" id="closeDemoModal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-4">Use these credentials to test the dashboard:</p>
+                
+                <div class="demo-credentials">
+                    <div class="credential-item">
+                        <strong>Admin Account:</strong>
+                        <div class="credential-details">
+                            <span>Email: admin@priyo.com</span>
+                            <span>Password: admin123</span>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="fillCredentials('admin@priyo.com', 'admin123')">
+                            Use Admin
+                        </button>
+                    </div>
+                    
+                    <div class="credential-item">
+                        <strong>Agent Account:</strong>
+                        <div class="credential-details">
+                            <span>Email: agent@priyo.com</span>
+                            <span>Password: agent123</span>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="fillCredentials('agent@priyo.com', 'agent123')">
+                            Use Agent
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-sm text-gray-600 mt-4">
+                    <strong>Note:</strong> These are demo accounts. In production, create proper user accounts through the backend registration API.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./config/config.js"></script>
+    <script src="./assets/js/utils.js"></script>
+    <script src="./assets/js/api.js"></script>
+    <script src="./assets/js/auth.js"></script>
+
+    <script>
+        class LoginPage {
+            constructor() {
+                this.form = document.getElementById('loginForm');
+                this.emailInput = document.getElementById('email');
+                this.passwordInput = document.getElementById('password');
+                this.rememberMeInput = document.getElementById('rememberMe');
+                this.loginButton = document.getElementById('loginButton');
+                this.passwordToggle = document.getElementById('passwordToggle');
+                this.connectionStatus = document.getElementById('connectionStatus');
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.checkConnection();
+                this.loadRememberedCredentials();
+                this.setupDemoMode();
+            }
+
+            setupEventListeners() {
+                this.form.addEventListener('submit', this.handleLogin.bind(this));
+                this.passwordToggle.addEventListener('click', this.togglePasswordVisibility.bind(this));
+                
+                // Real-time validation
+                this.emailInput.addEventListener('blur', this.validateEmail.bind(this));
+                this.passwordInput.addEventListener('blur', this.validatePassword.bind(this));
+                
+                // Clear errors on input
+                this.emailInput.addEventListener('input', () => this.clearError('emailError'));
+                this.passwordInput.addEventListener('input', () => this.clearError('passwordError'));
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                if (!this.validateForm()) {
+                    return;
+                }
+
+                this.setLoading(true);
+                this.clearError('formError');
+
+                const email = this.emailInput.value.trim();
+                const password = this.passwordInput.value;
+                const rememberMe = this.rememberMeInput.checked;
+
+                try {
+                    const result = await Auth.login(email, password);
+                    
+                    if (result.success) {
+                        // Save credentials if remember me is checked
+                        if (rememberMe) {
+                            Utils.storage.set('remembered_email', email);
+                        } else {
+                            Utils.storage.remove('remembered_email');
+                        }
+
+                        // Redirect to appropriate dashboard
+                        Auth.redirectToDashboard();
+                    } else {
+                        this.showError('formError', result.error || 'Login failed');
+                    }
+                } catch (error) {
+                    Utils.log.error('Login error:', error);
+                    this.showError('formError', 'An unexpected error occurred. Please try again.');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            validateForm() {
+                let isValid = true;
+
+                if (!this.validateEmail()) {
+                    isValid = false;
+                }
+
+                if (!this.validatePassword()) {
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            validateEmail() {
+                const email = this.emailInput.value.trim();
+                
+                if (!email) {
+                    this.showError('emailError', 'Email is required');
+                    return false;
+                }
+
+                if (!Utils.isValidEmail(email)) {
+                    this.showError('emailError', 'Please enter a valid email address');
+                    return false;
+                }
+
+                this.clearError('emailError');
+                return true;
+            }
+
+            validatePassword() {
+                const password = this.passwordInput.value;
+                
+                if (!password) {
+                    this.showError('passwordError', 'Password is required');
+                    return false;
+                }
+
+                if (password.length < 6) {
+                    this.showError('passwordError', 'Password must be at least 6 characters');
+                    return false;
+                }
+
+                this.clearError('passwordError');
+                return true;
+            }
+
+            showError(elementId, message) {
+                const errorElement = document.getElementById(elementId);
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.style.display = 'block';
+                }
+            }
+
+            clearError(elementId) {
+                const errorElement = document.getElementById(elementId);
+                if (errorElement) {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                }
+            }
+
+            togglePasswordVisibility() {
+                const isPassword = this.passwordInput.type === 'password';
+                this.passwordInput.type = isPassword ? 'text' : 'password';
+                
+                const eyeIcon = this.passwordToggle.querySelector('.eye-icon');
+                if (isPassword) {
+                    eyeIcon.innerHTML = `
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    `;
+                } else {
+                    eyeIcon.innerHTML = `
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    `;
+                }
+            }
+
+            setLoading(loading) {
+                const btnText = this.loginButton.querySelector('.btn-text');
+                const btnLoading = this.loginButton.querySelector('.btn-loading');
+                
+                if (loading) {
+                    btnText.classList.add('hidden');
+                    btnLoading.classList.remove('hidden');
+                    this.loginButton.disabled = true;
+                } else {
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                    this.loginButton.disabled = false;
+                }
+            }
+
+            async checkConnection() {
+                const statusDot = this.connectionStatus.querySelector('.status-dot');
+                const statusText = this.connectionStatus.querySelector('.status-text');
+                
+                try {
+                    const isConnected = await API.healthCheck();
+                    
+                    if (isConnected) {
+                        statusDot.className = 'status-dot status-connected';
+                        statusText.textContent = 'Connected to server';
+                    } else {
+                        statusDot.className = 'status-dot status-disconnected';
+                        statusText.textContent = 'Server unavailable';
+                    }
+                } catch (error) {
+                    statusDot.className = 'status-dot status-disconnected';
+                    statusText.textContent = 'Connection failed';
+                }
+            }
+
+            loadRememberedCredentials() {
+                const rememberedEmail = Utils.storage.get('remembered_email');
+                if (rememberedEmail) {
+                    this.emailInput.value = rememberedEmail;
+                    this.rememberMeInput.checked = true;
+                    this.passwordInput.focus();
+                }
+            }
+
+            setupDemoMode() {
+                // Add demo button in development
+                if (CONFIG.DEBUG) {
+                    const demoButton = document.createElement('button');
+                    demoButton.type = 'button';
+                    demoButton.className = 'btn btn-ghost btn-sm';
+                    demoButton.textContent = 'Demo Credentials';
+                    demoButton.onclick = () => this.showDemoModal();
+                    
+                    const loginFooter = document.querySelector('.login-footer');
+                    loginFooter.insertBefore(demoButton, loginFooter.firstChild);
+                }
+            }
+
+            showDemoModal() {
+                document.getElementById('demoModal').classList.remove('hidden');
+                document.getElementById('closeDemoModal').onclick = () => {
+                    document.getElementById('demoModal').classList.add('hidden');
+                };
+            }
+        }
+
+        // Global function for demo credentials
+        function fillCredentials(email, password) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
+            document.getElementById('demoModal').classList.add('hidden');
+        }
+
+        // Initialize login page
+        document.addEventListener('DOMContentLoaded', () => {
+            new LoginPage();
+        });
+    </script>
+
+    <style>
+        /* Login-specific styles */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: var(--spacing-lg);
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: var(--border-radius-xl);
+            box-shadow: var(--shadow-xl);
+            padding: var(--spacing-2xl);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .logo-icon {
+            color: var(--primary-color);
+        }
+
+        .logo-text {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .login-title {
+            margin: 0 0 var(--spacing-sm) 0;
+            color: var(--gray-900);
+        }
+
+        .login-subtitle {
+            color: var(--gray-600);
+            margin: 0;
+        }
+
+        .login-form {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .password-input-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: var(--spacing-sm);
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: var(--border-radius);
+            transition: color var(--transition-fast);
+        }
+
+        .password-toggle:hover {
+            color: var(--gray-600);
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            color: var(--gray-700);
+        }
+
+        .checkbox-custom {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 3px;
+            position: relative;
+            transition: all var(--transition-fast);
+        }
+
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        input[type="checkbox"]:checked + .checkbox-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        input[type="checkbox"]:checked + .checkbox-custom::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: -1px;
+            width: 6px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .form-error {
+            color: var(--error-color);
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-xs);
+            display: none;
+        }
+
+        .btn-loading {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .login-footer {
+            text-align: center;
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .forgot-password-link {
+            color: var(--primary-color);
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-lg);
+            display: inline-block;
+        }
+
+        .login-help {
+            margin-top: var(--spacing-lg);
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: var(--spacing-lg);
+            right: var(--spacing-lg);
+            background: var(--white);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            font-size: var(--font-size-sm);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--gray-400);
+        }
+
+        .status-dot.status-connected {
+            background-color: var(--success-color);
+        }
+
+        .status-dot.status-disconnected {
+            background-color: var(--error-color);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: var(--z-modal);
+            padding: var(--spacing-lg);
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: var(--border-radius);
+            transition: color var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            color: var(--gray-600);
+        }
+
+        .modal-body {
+            padding: var(--spacing-lg);
+        }
+
+        .demo-credentials {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        .credential-item {
+            padding: var(--spacing-md);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            background: var(--gray-50);
+        }
+
+        .credential-details {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+            margin: var(--spacing-sm) 0;
+            font-family: monospace;
+            font-size: var(--font-size-sm);
+            color: var(--gray-600);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: var(--spacing-md);
+            }
+            
+            .login-card {
+                padding: var(--spacing-xl);
+            }
+            
+            .connection-status {
+                position: static;
+                margin-top: var(--spacing-lg);
+                text-align: center;
+            }
+        }
+    </style>
+</body>
+</html>
