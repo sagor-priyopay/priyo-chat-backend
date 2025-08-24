@@ -7,7 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/index.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
-    "postinstall": "npx prisma generate && npx prisma db push --accept-data-loss && npm run build",
+    "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
