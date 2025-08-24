@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Priyo Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="admin.css">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Date formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/index.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="assets/logo.png" alt="Logo" class="sidebar-logo" onerror="this.style.display='none'">
+                <h2 class="sidebar-title">Admin Dashboard</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="#" class="nav-link active" data-page="overview">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Overview</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-page="conversations">
+                        <span class="nav-icon">💬</span>
+                        <span class="nav-text">All Conversations</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-page="agents">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Manage Agents</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-page="analytics">
+                        <span class="nav-icon">📈</span>
+                        <span class="nav-text">Analytics</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-page="reports">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">Reports</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-page="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                    <h1 class="page-title" id="pageTitle">System Overview</h1>
+                </div>
+                
+                <div class="header-right">
+                    <button class="notification-bell" id="notificationBell">
+                        🔔
+                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    </button>
+                    
+                    <div class="user-menu">
+                        <img src="assets/default-avatar.png" alt="Admin" class="user-avatar" id="userAvatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2NjdlZWEiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyQzE0LjIwOTEgMTIgMTYgMTAuMjA5MSAxNiA4QzE2IDUuNzkwODYgMTQuMjA5MSA0IDEyIDRDOS43OTA4NiA0IDggNS43OTA4NiA4IDhDOCAxMC4yMDkxIDkuNzkwODYgMTIgMTIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo='">
+                        <div class="user-dropdown" id="userDropdown" style="display: none;">
+                            <div class="dropdown-item" id="userProfile">Profile</div>
+                            <div class="dropdown-item" id="logoutBtn">Logout</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content" id="contentArea">
+                <!-- Overview Page -->
+                <div class="page-content" id="overviewPage">
+                    <div class="overview-grid">
+                        <!-- System Stats -->
+                        <div class="card stats-card">
+                            <div class="card-header">
+                                <h3 class="card-title">System Statistics</h3>
+                                <select id="statsTimeframe" class="form-select">
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month" selected>This Month</option>
+                                </select>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value" id="totalConversations">--</div>
+                                    <div class="stat-label">Total Conversations</div>
+                                    <div class="stat-change positive" id="conversationsChange">+12%</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="activeAgents">--</div>
+                                    <div class="stat-label">Active Agents</div>
+                                    <div class="stat-change" id="agentsChange">--</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="avgResponseTime">--</div>
+                                    <div class="stat-label">Avg Response Time</div>
+                                    <div class="stat-change negative" id="responseTimeChange">-8%</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="resolutionRate">--</div>
+                                    <div class="stat-label">Resolution Rate</div>
+                                    <div class="stat-change positive" id="resolutionChange">+5%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="card activity-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Recent Activity</h3>
+                                <button class="btn btn-sm btn-secondary" id="refreshActivity">Refresh</button>
+                            </div>
+                            <div class="activity-list" id="activityList">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Agent Performance -->
+                        <div class="card performance-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Top Performing Agents</h3>
+                            </div>
+                            <div class="performance-list" id="performanceList">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Health -->
+                        <div class="card health-card">
+                            <div class="card-header">
+                                <h3 class="card-title">System Health</h3>
+                            </div>
+                            <div class="health-indicators">
+                                <div class="health-item">
+                                    <div class="health-status online" id="serverStatus"></div>
+                                    <span>Server Status</span>
+                                </div>
+                                <div class="health-item">
+                                    <div class="health-status online" id="databaseStatus"></div>
+                                    <span>Database</span>
+                                </div>
+                                <div class="health-item">
+                                    <div class="health-status online" id="socketStatus"></div>
+                                    <span>WebSocket</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agents Management Page -->
+                <div class="page-content" id="agentsPage" style="display: none;">
+                    <div class="agents-header">
+                        <div class="agents-actions">
+                            <button class="btn btn-primary" id="addAgentBtn">Add New Agent</button>
+                            <button class="btn btn-secondary" id="exportAgentsBtn">Export List</button>
+                        </div>
+                        <div class="agents-filters">
+                            <input type="text" placeholder="Search agents..." class="form-control" id="agentSearch">
+                            <select class="form-select" id="agentRoleFilter">
+                                <option value="">All Roles</option>
+                                <option value="AGENT">Agent</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                            <select class="form-select" id="agentStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="online">Online</option>
+                                <option value="offline">Offline</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="agents-table-container">
+                            <table class="table" id="agentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Agent</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Conversations</th>
+                                        <th>Avg Response</th>
+                                        <th>Rating</th>
+                                        <th>Last Active</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agentsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center">
+                                            <div class="loading">
+                                                <div class="spinner"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Page -->
+                <div class="page-content" id="analyticsPage" style="display: none;">
+                    <div class="analytics-controls">
+                        <div class="date-range">
+                            <input type="date" id="startDate" class="form-control">
+                            <span>to</span>
+                            <input type="date" id="endDate" class="form-control">
+                            <button class="btn btn-primary" id="applyDateRange">Apply</button>
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Conversation Volume</h3>
+                            </div>
+                            <canvas id="conversationVolumeChart"></canvas>
+                        </div>
+
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Response Time Trends</h3>
+                            </div>
+                            <canvas id="responseTimeTrendChart"></canvas>
+                        </div>
+
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Agent Performance</h3>
+                            </div>
+                            <canvas id="agentPerformanceChart"></canvas>
+                        </div>
+
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Customer Satisfaction</h3>
+                            </div>
+                            <canvas id="satisfactionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Page -->
+                <div class="page-content" id="reportsPage" style="display: none;">
+                    <div class="reports-header">
+                        <h2>Generate Reports</h2>
+                        <div class="report-actions">
+                            <button class="btn btn-primary" id="generateReportBtn">Generate Report</button>
+                        </div>
+                    </div>
+
+                    <div class="reports-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Report Configuration</h3>
+                            </div>
+                            <form id="reportForm">
+                                <div class="form-group">
+                                    <label class="form-label">Report Type</label>
+                                    <select class="form-control" id="reportType">
+                                        <option value="agent-performance">Agent Performance</option>
+                                        <option value="conversation-summary">Conversation Summary</option>
+                                        <option value="customer-satisfaction">Customer Satisfaction</option>
+                                        <option value="system-usage">System Usage</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date Range</label>
+                                    <div class="date-inputs">
+                                        <input type="date" class="form-control" id="reportStartDate">
+                                        <input type="date" class="form-control" id="reportEndDate">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Format</label>
+                                    <select class="form-control" id="reportFormat">
+                                        <option value="pdf">PDF</option>
+                                        <option value="csv">CSV</option>
+                                        <option value="excel">Excel</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Recent Reports</h3>
+                            </div>
+                            <div class="reports-list" id="reportsList">
+                                <div class="report-item">
+                                    <div class="report-info">
+                                        <h4>Agent Performance - November 2024</h4>
+                                        <p>Generated on Nov 24, 2024</p>
+                                    </div>
+                                    <div class="report-actions">
+                                        <button class="btn btn-sm btn-secondary">Download</button>
+                                        <button class="btn btn-sm btn-danger">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div class="page-content" id="settingsPage" style="display: none;">
+                    <div class="settings-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">System Settings</h3>
+                            </div>
+                            <form id="systemSettingsForm">
+                                <div class="form-group">
+                                    <label class="form-label">Auto-assign Conversations</label>
+                                    <select class="form-control" id="autoAssign">
+                                        <option value="round-robin">Round Robin</option>
+                                        <option value="least-busy">Least Busy Agent</option>
+                                        <option value="manual">Manual Assignment</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Max Conversations per Agent</label>
+                                    <input type="number" class="form-control" id="maxConversations" value="5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Response Time Alert (minutes)</label>
+                                    <input type="number" class="form-control" id="responseAlert" value="10">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Notification Settings</h3>
+                            </div>
+                            <form id="notificationSettingsForm">
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="emailNotifications" checked>
+                                        <span class="checkmark"></span>
+                                        Email Notifications
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="pushNotifications" checked>
+                                        <span class="checkmark"></span>
+                                        Push Notifications
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="slackIntegration">
+                                        <span class="checkmark"></span>
+                                        Slack Integration
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Agent Modal -->
+    <div class="modal" id="addAgentModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Agent</h3>
+                <button class="modal-close" id="addAgentModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addAgentForm">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="agentName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="agentEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="agentUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="agentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select class="form-control" id="agentRole" required>
+                            <option value="AGENT">Agent</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelAddAgent">Cancel</button>
+                <button class="btn btn-primary" id="confirmAddAgent">Add Agent</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="socket.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
