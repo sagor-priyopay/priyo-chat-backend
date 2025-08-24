@@ -11,7 +11,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: postgresql://postgres.qoyriivwlxiddhdnctpq:Priyopay123456@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+        value: postgresql://postgres.qoyriivwlxiddhdnctpq:Priyopay123456@aws-0-us-east-1.pooler.supabase.com:5432/postgres
       - key: SUPABASE_URL
         value: https://qoyriivwlxiddhdnctpq.supabase.co
       - key: SUPABASE_ANON_KEY
