@@ -344,22 +344,22 @@
             }
         };
 
-        // Simple Auth service
+        // Simple Auth object for this test page
         const Auth = {
             login: async (email, password) => {
                 try {
                     const response = await API.login(email, password);
                     
-                    if (response.tokens) {
+                    if (response.user && response.tokens) {
                         Utils.storage.set('access_token', response.tokens.accessToken);
                         Utils.storage.set('refresh_token', response.tokens.refreshToken);
                         Utils.storage.set('user', JSON.stringify(response.user));
                         return { success: true, user: response.user };
                     }
                     
-                    return { success: false, error: 'Invalid response' };
+                    return { success: false, error: response.error || 'Invalid response' };
                 } catch (error) {
-                    return { success: false, error: error.message };
+                    return { success: false, error: error.message || 'Login failed' };
                 }
             },
 
@@ -409,13 +409,13 @@
                     const result = await Auth.login(email, password);
                     
                     if (result.success) {
-                        Utils.log.info('Login successful');
+                        console.log('Login successful');
                         Auth.redirectToDashboard();
                     } else {
                         this.showError('formError', result.error || 'Login failed');
                     }
                 } catch (error) {
-                    Utils.log.error('Login error:', error);
+                    console.error('Login error:', error);
                     this.showError('formError', 'An unexpected error occurred. Please try again.');
                 } finally {
                     this.setLoading(false);
