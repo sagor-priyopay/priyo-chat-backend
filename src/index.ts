@@ -168,6 +168,7 @@ async function startServer(): Promise<void> {
           aiAgent: '/api/ai-agent'
         },
         widget: '/widget/test.html',
+        agentDashboard: '/agent-dashboard/login.html',
         timestamp: new Date().toISOString()
       });
     });
@@ -184,6 +185,9 @@ async function startServer(): Promise<void> {
 
     // Serve widget static files
     app.use('/widget', express.static(path.join(__dirname, '../public/widget')));
+    
+    // Serve agent dashboard static files
+    app.use('/agent-dashboard', express.static(path.join(__dirname, '../public/agent-dashboard')));
     
 
     // API routes
