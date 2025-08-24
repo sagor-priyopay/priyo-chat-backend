@@ -183,11 +183,33 @@ async function startServer(): Promise<void> {
       res.json(MonitoringService.getMetrics());
     });
 
-    // Serve widget static files
-    app.use('/widget', express.static(path.join(__dirname, '../public/widget')));
+    // Serve widget static files with proper MIME types
+    app.use('/widget', express.static(path.join(__dirname, '../public/widget'), {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'text/javascript');
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.html')) {
+          res.setHeader('Content-Type', 'text/html');
+        }
+      }
+    }));
     
-    // Serve agent dashboard static files
-    app.use('/agent-dashboard', express.static(path.join(__dirname, '../public/agent-dashboard')));
+    // Serve agent dashboard static files with proper MIME types
+    app.use('/agent-dashboard', express.static(path.join(__dirname, '../public/agent-dashboard'), {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'text/javascript');
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.html')) {
+          res.setHeader('Content-Type', 'text/html');
+        } else if (filePath.endsWith('.json')) {
+          res.setHeader('Content-Type', 'application/json');
+        }
+      }
+    }));
     
 
     // API routes
