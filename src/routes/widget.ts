@@ -144,11 +144,27 @@ router.post('/conversation', validateRequest(widgetSchemas.conversation), async 
         }
       });
 
-      // Send welcome message
+      // Send welcome message from system/agent
+      // First, find or create an agent user for system messages
+      let agentUser = await prisma.user.findFirst({
+        where: { role: 'AGENT' }
+      });
+      
+      if (!agentUser) {
+        agentUser = await prisma.user.create({
+          data: {
+            email: 'agent@priyo.com',
+            username: 'Priyo Support',
+            password: 'system_agent',
+            role: 'AGENT'
+          }
+        });
+      }
+
       const welcomeMessage = await prisma.message.create({
         data: {
           content: "Hello! 👋 Welcome to Priyo Pay. How can I help you today?",
-          senderId: userId, // System message from user's perspective
+          senderId: agentUser.id, // System message from agent
           conversationId: conversation.id,
           type: 'TEXT'
         },
