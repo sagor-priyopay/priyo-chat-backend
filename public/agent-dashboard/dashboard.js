@@ -101,6 +101,11 @@ class PriyoChatDashboard {
         document.getElementById('statusToggle').addEventListener('click', () => {
             this.toggleAgentStatus();
         });
+
+        // User menu
+        document.getElementById('userMenu').addEventListener('click', () => {
+            this.toggleUserMenu();
+        });
     }
 
     switchView(view) {
@@ -468,6 +473,98 @@ class PriyoChatDashboard {
         document.getElementById('inboxBadge').textContent = unreadCount;
         document.getElementById('chatsBadge').textContent = chatCount;
         document.getElementById('ticketsBadge').textContent = ticketCount;
+    }
+
+    toggleUserMenu() {
+        // Remove existing dropdown if present
+        const existingDropdown = document.querySelector('.user-dropdown');
+        if (existingDropdown) {
+            existingDropdown.remove();
+            return;
+        }
+
+        // Create dropdown menu
+        const dropdown = document.createElement('div');
+        dropdown.className = 'user-dropdown';
+        dropdown.style.cssText = `
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            z-index: 1000;
+        `;
+
+        dropdown.innerHTML = `
+            <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                <div style="font-weight: 600; color: #2d3748;">${this.currentUser.name}</div>
+                <div style="font-size: 12px; color: #718096;">${this.currentUser.email}</div>
+            </div>
+            <div style="padding: 8px 0;">
+                <button class="dropdown-item" id="profileBtn" style="width: 100%; text-align: left; padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: #4a5568;" onmouseover="this.style.backgroundColor='#f7fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                    Profile Settings
+                </button>
+                <button class="dropdown-item" id="logoutBtn" style="width: 100%; text-align: left; padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: #e53e3e;" onmouseover="this.style.backgroundColor='#fed7d7'" onmouseout="this.style.backgroundColor='transparent'">
+                    Sign Out
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(dropdown);
+
+        // Add event listeners
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            this.logout();
+        });
+
+        document.getElementById('profileBtn').addEventListener('click', () => {
+            dropdown.remove();
+            // Placeholder for profile settings
+            alert('Profile settings coming soon!');
+        });
+
+        // Close dropdown when clicking outside
+        setTimeout(() => {
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && e.target.id !== 'userMenu') {
+                    dropdown.remove();
+                }
+            }, { once: true });
+        }, 100);
+    }
+
+    async logout() {
+        try {
+            const token = localStorage.getItem('priyo_auth_token');
+            if (token) {
+                // Call logout API
+                await fetch(`${this.baseURL}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Logout API error:', error);
+        } finally {
+            // Clear all auth data
+            localStorage.removeItem('priyo_auth_token');
+            localStorage.removeItem('priyo_refresh_token');
+            localStorage.removeItem('priyo_user');
+            
+            // Disconnect socket
+            if (this.socket) {
+                this.socket.disconnect();
+            }
+            
+            // Redirect to login
+            window.location.href = '/agent-dashboard/login.html';
+        }
     }
 
     formatTime(timestamp) {
