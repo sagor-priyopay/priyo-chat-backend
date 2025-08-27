@@ -351,12 +351,23 @@ class PriyoWidget {
 
   addMessage(message) {
     const messageElement = document.createElement('div');
-    messageElement.className = `message ${message.sender === 'user' ? 'user' : 'bot'}`;
+    
+    // Determine message type - check for system/welcome messages
+    let messageType = 'bot';
+    if (message.sender === 'user') {
+      messageType = 'user';
+    } else if (message.type === 'system' || 
+               (message.text && message.text.includes('Welcome to Priyo Pay')) ||
+               (message.content && message.content.includes('Welcome to Priyo Pay'))) {
+      messageType = 'system';
+    }
+    
+    messageElement.className = `message ${messageType}`;
     
     // Use text or content property, fallback to empty string
     const messageText = message.text || message.content || '';
     
-    console.log('Adding message:', { sender: message.sender, text: messageText, fullMessage: message });
+    console.log('Adding message:', { sender: message.sender, type: messageType, text: messageText, fullMessage: message });
     
     const time = new Date(message.timestamp).toLocaleTimeString([], {
       hour: '2-digit', 
@@ -394,7 +405,7 @@ class PriyoWidget {
 
   addWelcomeMessage() {
     const welcomeElement = document.createElement('div');
-    welcomeElement.className = 'message bot';
+    welcomeElement.className = 'message system';
     welcomeElement.innerHTML = `
       <div class="avatar bot"></div>
       <div class="message-text">Hello! 👋 Welcome to Priyo Pay. How can I help you today?</div>

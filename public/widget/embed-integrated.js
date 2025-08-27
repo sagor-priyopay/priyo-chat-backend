@@ -417,6 +417,13 @@
       border-bottom-left-radius: 0;
     }
 
+    .message.system .message-text {
+      background: #e8f4fd;
+      color: #1a73e8;
+      border: 1px solid #d2e3fc;
+      border-bottom-left-radius: 0;
+    }
+
     .message.user .message-text {
       background: #E60023;
       color: #fff;
