@@ -292,7 +292,7 @@ async function startServer(): Promise<void> {
     if (process.env.NODE_ENV === 'production') {
       setInterval(async () => {
         try {
-          const response = await fetch(`${process.env.RENDER_EXTERNAL_URL || 'https://priyo-chat.onrender.com'}/health`);
+          const response = await fetch(`${process.env.RENDER_EXTERNAL_URL || 'https://priyo-chat-64wg.onrender.com'}/health`);
           console.log(`Self-ping: ${response.status} at ${new Date().toISOString()}`);
         } catch (error) {
           console.log('Self-ping failed:', error.message);

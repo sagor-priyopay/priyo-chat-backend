@@ -27,11 +27,11 @@ services:
       - key: ADMIN_CREATE_KEY
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://priyo-chat.onrender.com,https://pay.priyo.com,https://agent.pay.priyo.com
+        value: https://priyo-chat-64wg.onrender.com,https://pay.priyo.com,https://agent.pay.priyo.com
       - key: N8N_WEBHOOK_URL
         value: https://n8n.srv958024.hstgr.cloud/webhook/e985d15f-b2f6-456d-be15-97e0b1544a40/chat
       - key: PORT
         value: 3000
       - key: RENDER_EXTERNAL_URL
-        value: https://priyo-chat.onrender.com
+        value: https://priyo-chat-64wg.onrender.com
     plan: free
