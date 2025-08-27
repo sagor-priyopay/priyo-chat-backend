@@ -20,18 +20,61 @@ class PriyoChatDashboard {
     }
 
     async loadUserInfo() {
-        this.currentUser = {
-            id: 'agent_' + Date.now(),
-            name: 'Support Agent',
-            email: 'agent@priyo.com',
-            role: 'AGENT'
-        };
-        this.updateUserUI();
+        try {
+            const token = localStorage.getItem('priyo_auth_token');
+            if (!token) {
+                this.redirectToLogin();
+                return;
+            }
+
+            const response = await fetch(`${this.baseURL}/api/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const user = data.user || data; // Handle both response formats
+                if (user.role === 'AGENT' || user.role === 'ADMIN') {
+                    this.currentUser = {
+                        id: user.id,
+                        name: user.username,
+                        email: user.email,
+                        role: user.role,
+                        avatar: user.avatar
+                    };
+                    this.updateUserUI();
+                } else {
+                    console.error('Access denied: Not an agent or admin');
+                    this.redirectToLogin();
+                }
+            } else {
+                console.error('Authentication failed');
+                localStorage.removeItem('priyo_auth_token');
+                localStorage.removeItem('priyo_refresh_token');
+                localStorage.removeItem('priyo_user');
+                this.redirectToLogin();
+            }
+        } catch (error) {
+            console.error('Failed to load user info:', error);
+            this.redirectToLogin();
+        }
+    }
+
+    redirectToLogin() {
+        window.location.href = '/agent-dashboard/login.html';
     }
 
     updateUserUI() {
         document.getElementById('userName').textContent = this.currentUser.name;
-        document.getElementById('userAvatar').textContent = this.currentUser.name.charAt(0).toUpperCase();
+        const avatar = document.getElementById('userAvatar');
+        if (this.currentUser.avatar) {
+            avatar.innerHTML = `<img src="${this.currentUser.avatar}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            avatar.textContent = this.currentUser.name.charAt(0).toUpperCase();
+        }
     }
 
     setupEventListeners() {
