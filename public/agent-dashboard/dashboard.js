@@ -51,11 +51,37 @@ class PriyoChatDashboard {
                     this.redirectToLogin();
                 }
             } else {
-                console.error('Authentication failed');
-                localStorage.removeItem('priyo_auth_token');
-                localStorage.removeItem('priyo_refresh_token');
-                localStorage.removeItem('priyo_user');
-                this.redirectToLogin();
+                console.error('Authentication failed:', response.status, response.statusText);
+                // Don't immediately logout on server errors (5xx), only on auth errors (401, 403)
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('priyo_auth_token');
+                    localStorage.removeItem('priyo_refresh_token');
+                    localStorage.removeItem('priyo_user');
+                    this.redirectToLogin();
+                } else {
+                    // Server error - try to continue with cached user data
+                    const cachedUser = localStorage.getItem('priyo_user');
+                    if (cachedUser) {
+                        try {
+                            const user = JSON.parse(cachedUser);
+                            if (user.role === 'AGENT' || user.role === 'ADMIN') {
+                                this.currentUser = {
+                                    id: user.id,
+                                    name: user.username,
+                                    email: user.email,
+                                    role: user.role,
+                                    avatar: user.avatar
+                                };
+                                this.updateUserUI();
+                                console.warn('Using cached user data due to server error');
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Invalid cached user data');
+                        }
+                    }
+                    this.redirectToLogin();
+                }
             }
         } catch (error) {
             console.error('Failed to load user info:', error);

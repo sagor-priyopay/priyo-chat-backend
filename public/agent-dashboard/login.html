@@ -260,8 +260,8 @@
                     if (response.ok) {
                         // Check if user is agent or admin
                         if (data.user.role === 'AGENT' || data.user.role === 'ADMIN') {
-                            localStorage.setItem('priyo_auth_token', data.accessToken);
-                            localStorage.setItem('priyo_refresh_token', data.refreshToken);
+                            localStorage.setItem('priyo_auth_token', data.tokens.accessToken);
+                            localStorage.setItem('priyo_refresh_token', data.tokens.refreshToken);
                             localStorage.setItem('priyo_user', JSON.stringify(data.user));
                             
                             // Redirect to dashboard
