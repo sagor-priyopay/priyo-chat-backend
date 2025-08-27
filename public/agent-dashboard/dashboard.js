@@ -184,41 +184,38 @@ class PriyoChatDashboard {
     }
 
     async loadConversations() {
-        // Mock data for demo
-        const now = new Date();
-        this.conversations = [
-            {
-                id: 'conv_1',
-                type: 'chat',
-                customer: {
-                    name: 'John Doe',
-                    email: 'john@example.com'
-                },
-                lastMessage: {
-                    text: 'Hi, I need help with my payment issue',
-                    timestamp: new Date(now.getTime() - 5 * 60 * 1000),
-                    sender: 'customer'
-                },
-                status: 'open',
-                unread: true
-            },
-            {
-                id: 'conv_2',
-                type: 'ticket',
-                customer: {
-                    name: 'Jane Smith',
-                    email: 'jane@example.com'
-                },
-                subject: 'Account Setup Issues',
-                lastMessage: {
-                    text: 'Thank you for your help!',
-                    timestamp: new Date(now.getTime() - 30 * 60 * 1000),
-                    sender: 'customer'
-                },
-                status: 'resolved',
-                unread: false
+        try {
+            const token = localStorage.getItem('priyo_auth_token');
+            if (!token) {
+                console.error('No auth token found');
+                this.redirectToLogin();
+                return;
             }
-        ];
+
+            const response = await fetch(`${this.baseURL}/api/agent-dashboard/conversations`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.conversations = data.conversations || [];
+                console.log(`Loaded ${this.conversations.length} conversations`);
+            } else if (response.status === 401 || response.status === 403) {
+                console.error('Authentication failed, redirecting to login');
+                this.redirectToLogin();
+                return;
+            } else {
+                console.error('Failed to load conversations:', response.status);
+                // Fallback to empty array
+                this.conversations = [];
+            }
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            this.conversations = [];
+        }
     }
 
     renderConversations() {
@@ -236,22 +233,54 @@ class PriyoChatDashboard {
             filteredConversations = filteredConversations.filter(c => c.unread);
         }
 
+        if (filteredConversations.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="padding: 40px 20px; text-align: center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color: #9ca3af; margin-bottom: 16px;">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <h3 style="font-size: 16px; margin-bottom: 8px; color: #374151;">No conversations found</h3>
+                    <p style="font-size: 14px; color: #6b7280;">New conversations will appear here when customers start chatting</p>
+                </div>
+            `;
+            return;
+        }
+
         container.innerHTML = filteredConversations.map(conv => {
-            const displayText = conv.type === 'ticket' ? conv.subject || conv.lastMessage.text : conv.lastMessage.text;
+            // Handle different conversation data structures
+            const customerName = conv.customer?.name || 
+                               conv.participants?.find(p => p.user?.role === 'USER')?.user?.username || 
+                               'Unknown Customer';
+            
+            const lastMessageText = conv.lastMessage?.text || 
+                                  conv.lastMessage?.content || 
+                                  conv.messages?.[conv.messages.length - 1]?.content || 
+                                  'No messages yet';
+            
+            const lastMessageTime = conv.lastMessage?.timestamp || 
+                                  conv.lastMessage?.createdAt || 
+                                  conv.messages?.[conv.messages.length - 1]?.createdAt || 
+                                  conv.updatedAt || 
+                                  conv.createdAt;
+            
+            const displayText = conv.type === 'ticket' ? (conv.subject || lastMessageText) : lastMessageText;
+            const conversationType = conv.type || 'chat';
+            const conversationStatus = conv.status?.toLowerCase() || 'open';
+            const isUnread = conv.unread || false;
             
             return `
-                <div class="inbox-item ${conv.unread ? 'unread' : ''}" data-id="${conv.id}">
+                <div class="inbox-item ${isUnread ? 'unread' : ''}" data-id="${conv.id}">
                     <div class="inbox-item-header">
-                        <div class="customer-name">${conv.customer.name}</div>
-                        <div class="inbox-time">${this.formatTime(conv.lastMessage.timestamp)}</div>
+                        <div class="customer-name">${this.escapeHtml(customerName)}</div>
+                        <div class="inbox-time">${this.formatTime(lastMessageTime)}</div>
                     </div>
-                    <div class="inbox-preview">${displayText}</div>
+                    <div class="inbox-preview">${this.escapeHtml(displayText)}</div>
                     <div class="inbox-meta">
                         <div style="display: flex; gap: 4px;">
-                            <span class="inbox-type type-${conv.type}">${conv.type}</span>
-                            <span class="inbox-status status-${conv.status}">${conv.status}</span>
+                            <span class="inbox-type type-${conversationType}">${conversationType}</span>
+                            <span class="inbox-status status-${conversationStatus}">${conversationStatus}</span>
                         </div>
-                        ${conv.unread ? '<div class="unread-dot"></div>' : ''}
+                        ${isUnread ? '<div class="unread-dot"></div>' : ''}
                     </div>
                 </div>
             `;
@@ -416,15 +445,7 @@ class PriyoChatDashboard {
 
         // If this is the current conversation, add to UI
         if (this.currentConversation && this.currentConversation.id === message.conversationId) {
-            this.addMessageToUI(message);
-        }
-
-        this.renderConversations();
-        this.updateBadges();
-
-        // Play notification sound for customer messages
-        if (message.sender === 'customer') {
-            this.playNotificationSound();
+            // Re-render messages will be handled by the handleNewMessage method above
         }
     }
 
