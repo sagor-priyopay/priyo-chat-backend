@@ -288,6 +288,18 @@ async function startServer(): Promise<void> {
       socketService.cleanupTypingIndicators();
     }, 5 * 60 * 1000);
 
+    // Self-ping to prevent Render free tier spin-down (every 14 minutes)
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(async () => {
+        try {
+          const response = await fetch(`${process.env.RENDER_EXTERNAL_URL || 'https://priyo-chat.onrender.com'}/health`);
+          console.log(`Self-ping: ${response.status} at ${new Date().toISOString()}`);
+        } catch (error) {
+          console.log('Self-ping failed:', error.message);
+        }
+      }, 14 * 60 * 1000); // 14 minutes
+    }
+
   } catch (error) {
     console.error('Failed to initialize application:', error);
     process.exit(1);
