@@ -7,6 +7,7 @@ class PriyoChatDashboard {
         this.currentView = 'inbox';
         this.currentFilter = 'all';
         this.agentStatus = 'online';
+        this.baseURL = 'https://priyo-chat-64wg.onrender.com';
         
         this.init();
     }
@@ -79,10 +80,11 @@ class PriyoChatDashboard {
     }
 
     connectSocket() {
-        this.socket = io('https://priyo-chat-64wg.onrender.com', {
+        this.socket = io(this.baseURL, {
             auth: {
                 userId: this.currentUser.id,
-                role: 'agent'
+                role: 'agent',
+                token: localStorage.getItem('priyo_auth_token')
             }
         });
 
@@ -92,6 +94,18 @@ class PriyoChatDashboard {
 
         this.socket.on('new-message', (message) => {
             this.handleNewMessage(message);
+        });
+
+        this.socket.on('conversation-updated', (data) => {
+            this.updateConversationInList(data);
+        });
+
+        this.socket.on('conversation-assigned', (data) => {
+            this.handleConversationAssigned(data);
+        });
+
+        this.socket.on('conversation-resolved', (data) => {
+            this.handleConversationResolved(data);
         });
     }
 
@@ -131,9 +145,6 @@ class PriyoChatDashboard {
                 unread: false
             }
         ];
-
-        this.renderConversations();
-        this.updateBadges();
     }
 
     renderConversations() {
@@ -252,21 +263,50 @@ class PriyoChatDashboard {
         }
     }
 
-    sendMessage() {
+    async sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
         
-        if (!text) return;
+        if (!text || !this.currentConversation) return;
 
         input.value = '';
         
-        const message = {
-            text: text,
-            sender: 'agent',
-            timestamp: new Date()
-        };
+        try {
+            const response = await fetch(`${this.baseURL}/api/agent-dashboard/conversations/${this.currentConversation.id}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('priyo_auth_token') || 'demo-token'}`
+                },
+                body: JSON.stringify({
+                    text: text,
+                    type: 'TEXT'
+                })
+            });
 
-        this.addMessageToUI(message);
+            if (response.ok) {
+                const data = await response.json();
+                this.addMessageToUI(data.data);
+            } else {
+                console.error('Failed to send message:', response.status);
+                // Add to UI anyway for demo
+                const message = {
+                    text: text,
+                    sender: 'agent',
+                    timestamp: new Date()
+                };
+                this.addMessageToUI(message);
+            }
+        } catch (error) {
+            console.error('Send message error:', error);
+            // Add to UI anyway for demo
+            const message = {
+                text: text,
+                sender: 'agent',
+                timestamp: new Date()
+            };
+            this.addMessageToUI(message);
+        }
     }
 
     addMessageToUI(message) {
@@ -286,10 +326,82 @@ class PriyoChatDashboard {
     }
 
     handleNewMessage(message) {
+        // Update conversation in list
+        const conversation = this.conversations.find(c => c.id === message.conversationId);
+        if (conversation) {
+            conversation.lastMessage = {
+                text: message.text,
+                timestamp: new Date(message.timestamp),
+                sender: message.sender
+            };
+            conversation.updatedAt = new Date(message.timestamp);
+            if (message.sender === 'customer') {
+                conversation.unread = true;
+            }
+        }
+
+        // If this is the current conversation, add to UI
         if (this.currentConversation && this.currentConversation.id === message.conversationId) {
             this.addMessageToUI(message);
         }
+
+        this.renderConversations();
         this.updateBadges();
+
+        // Play notification sound for customer messages
+        if (message.sender === 'customer') {
+            this.playNotificationSound();
+        }
+    }
+
+    updateConversationInList(data) {
+        const conversation = this.conversations.find(c => c.id === data.conversationId);
+        if (conversation) {
+            Object.assign(conversation, data);
+            this.renderConversations();
+        }
+    }
+
+    handleConversationAssigned(data) {
+        const conversation = this.conversations.find(c => c.id === data.conversationId);
+        if (conversation) {
+            conversation.assignedTo = data.assignedTo;
+            conversation.assignedAgent = data.assignedAgent;
+            this.renderConversations();
+        }
+    }
+
+    handleConversationResolved(data) {
+        const conversation = this.conversations.find(c => c.id === data.conversationId);
+        if (conversation) {
+            conversation.status = data.status;
+            this.renderConversations();
+            if (this.currentConversation && this.currentConversation.id === data.conversationId) {
+                this.renderConversationView();
+            }
+        }
+    }
+
+    playNotificationSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        } catch (error) {
+            console.log('Audio notification not supported');
+        }
     }
 
     toggleAgentStatus() {

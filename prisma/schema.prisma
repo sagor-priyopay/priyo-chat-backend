@@ -25,11 +25,12 @@ model User {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  sentMessages     Message[]           @relation("MessageSender")
-  conversations    ConversationUser[]
-  refreshTokens    RefreshToken[]
-  messageReads     MessageRead[]
-  typingIndicators TypingIndicator[]
+  sentMessages       Message[]           @relation("MessageSender")
+  conversations      ConversationUser[]
+  refreshTokens      RefreshToken[]
+  messageReads       MessageRead[]
+  typingIndicators   TypingIndicator[]
+  assignedConversations Conversation[]   @relation("AssignedConversations")
 
   @@map("users")
 }
@@ -48,17 +49,21 @@ model RefreshToken {
 }
 
 model Conversation {
-  id        String            @id @default(cuid())
-  name      String?
-  type      String           @default("DIRECT")
-  isActive  Boolean           @default(true)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id         String            @id @default(cuid())
+  name       String?
+  type       String           @default("DIRECT")
+  status     String           @default("OPEN")
+  priority   String           @default("MEDIUM")
+  assignedTo String?
+  isActive   Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   // Relations
   participants ConversationUser[]
   messages     Message[]
   typingUsers  TypingIndicator[]
+  assignedAgent User?           @relation("AssignedConversations", fields: [assignedTo], references: [id])
 
   @@map("conversations")
 }
@@ -131,3 +136,5 @@ model TypingIndicator {
 // Valid UserRole values: "ADMIN", "AGENT", "CUSTOMER"
 // Valid ConversationType values: "DIRECT", "GROUP"  
 // Valid MessageType values: "TEXT", "FILE", "IMAGE"
+// Valid ConversationStatus values: "OPEN", "PENDING", "RESOLVED", "CLOSED"
+// Valid ConversationPriority values: "LOW", "MEDIUM", "HIGH", "URGENT"

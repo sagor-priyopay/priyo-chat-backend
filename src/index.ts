@@ -19,6 +19,7 @@ import messageRoutes from './routes/messages';
 import uploadRoutes from './routes/upload';
 import widgetRoutes from './routes/widget';
 import aiAgentRoutes from './routes/ai-agent';
+import agentDashboardRoutes from './routes/agent-dashboard';
 
 // Load environment variables
 dotenv.config();
@@ -225,6 +226,7 @@ async function startServer(): Promise<void> {
     app.use('/api/upload', uploadRoutes);
     app.use('/api/widget', widgetRoutes);
     app.use('/api/ai-agent', aiAgentRoutes);
+    app.use('/api/agent-dashboard', agentDashboardRoutes);
     app.use('/api/priyo-auth', require('./routes/priyo-auth').default);
     app.use('/api/channels', require('./routes/channels').default);
 
