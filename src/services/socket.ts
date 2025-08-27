@@ -431,6 +431,15 @@ export class SocketService {
     }
   }
 
+  public emitToRole(role: string, event: string, data: any): void {
+    // Emit to all connected users with the specified role
+    this.connectedUsers.forEach((user, socketId) => {
+      if (user.role === role) {
+        this.io.to(socketId).emit(event, data);
+      }
+    });
+  }
+
   public static getInstance(): SocketService {
     if (!SocketService.instance) {
       throw new Error('SocketService not initialized. Call constructor first.');
