@@ -1,0 +1,339 @@
+class PriyoChatDashboard {
+    constructor() {
+        this.socket = null;
+        this.currentConversation = null;
+        this.conversations = [];
+        this.currentUser = null;
+        this.currentView = 'inbox';
+        this.currentFilter = 'all';
+        this.agentStatus = 'online';
+        
+        this.init();
+    }
+
+    async init() {
+        await this.loadUserInfo();
+        this.setupEventListeners();
+        this.connectSocket();
+        this.loadConversations();
+    }
+
+    async loadUserInfo() {
+        this.currentUser = {
+            id: 'agent_' + Date.now(),
+            name: 'Support Agent',
+            email: 'agent@priyo.com',
+            role: 'AGENT'
+        };
+        this.updateUserUI();
+    }
+
+    updateUserUI() {
+        document.getElementById('userName').textContent = this.currentUser.name;
+        document.getElementById('userAvatar').textContent = this.currentUser.name.charAt(0).toUpperCase();
+    }
+
+    setupEventListeners() {
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const view = e.currentTarget.dataset.view;
+                this.switchView(view);
+            });
+        });
+
+        // Filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentFilter = e.target.dataset.filter;
+                this.renderConversations();
+            });
+        });
+
+        // Status toggle
+        document.getElementById('statusToggle').addEventListener('click', () => {
+            this.toggleAgentStatus();
+        });
+    }
+
+    switchView(view) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+        const titles = {
+            inbox: 'Inbox',
+            chats: 'Live Chats',
+            tickets: 'Support Tickets',
+            reports: 'Reports',
+            settings: 'Settings'
+        };
+        document.getElementById('pageTitle').textContent = titles[view];
+
+        this.currentView = view;
+        this.loadConversations();
+    }
+
+    connectSocket() {
+        this.socket = io('https://priyo-chat-64wg.onrender.com', {
+            auth: {
+                userId: this.currentUser.id,
+                role: 'agent'
+            }
+        });
+
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        this.socket.on('new-message', (message) => {
+            this.handleNewMessage(message);
+        });
+    }
+
+    async loadConversations() {
+        // Mock data for demo
+        const now = new Date();
+        this.conversations = [
+            {
+                id: 'conv_1',
+                type: 'chat',
+                customer: {
+                    name: 'John Doe',
+                    email: 'john@example.com'
+                },
+                lastMessage: {
+                    text: 'Hi, I need help with my payment issue',
+                    timestamp: new Date(now.getTime() - 5 * 60 * 1000),
+                    sender: 'customer'
+                },
+                status: 'open',
+                unread: true
+            },
+            {
+                id: 'conv_2',
+                type: 'ticket',
+                customer: {
+                    name: 'Jane Smith',
+                    email: 'jane@example.com'
+                },
+                subject: 'Account Setup Issues',
+                lastMessage: {
+                    text: 'Thank you for your help!',
+                    timestamp: new Date(now.getTime() - 30 * 60 * 1000),
+                    sender: 'customer'
+                },
+                status: 'resolved',
+                unread: false
+            }
+        ];
+
+        this.renderConversations();
+        this.updateBadges();
+    }
+
+    renderConversations() {
+        const container = document.getElementById('inboxList');
+        
+        let filteredConversations = this.conversations;
+
+        if (this.currentView === 'chats') {
+            filteredConversations = filteredConversations.filter(c => c.type === 'chat');
+        } else if (this.currentView === 'tickets') {
+            filteredConversations = filteredConversations.filter(c => c.type === 'ticket');
+        }
+
+        if (this.currentFilter === 'unread') {
+            filteredConversations = filteredConversations.filter(c => c.unread);
+        }
+
+        container.innerHTML = filteredConversations.map(conv => {
+            const displayText = conv.type === 'ticket' ? conv.subject || conv.lastMessage.text : conv.lastMessage.text;
+            
+            return `
+                <div class="inbox-item ${conv.unread ? 'unread' : ''}" data-id="${conv.id}">
+                    <div class="inbox-item-header">
+                        <div class="customer-name">${conv.customer.name}</div>
+                        <div class="inbox-time">${this.formatTime(conv.lastMessage.timestamp)}</div>
+                    </div>
+                    <div class="inbox-preview">${displayText}</div>
+                    <div class="inbox-meta">
+                        <div style="display: flex; gap: 4px;">
+                            <span class="inbox-type type-${conv.type}">${conv.type}</span>
+                            <span class="inbox-status status-${conv.status}">${conv.status}</span>
+                        </div>
+                        ${conv.unread ? '<div class="unread-dot"></div>' : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.querySelectorAll('.inbox-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.selectConversation(item.dataset.id);
+            });
+        });
+    }
+
+    selectConversation(conversationId) {
+        document.querySelectorAll('.inbox-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-id="${conversationId}"]`).classList.add('active');
+
+        this.currentConversation = this.conversations.find(c => c.id === conversationId);
+        this.renderConversationView();
+    }
+
+    renderConversationView() {
+        if (!this.currentConversation) return;
+
+        const container = document.getElementById('conversationView');
+        const isTicket = this.currentConversation.type === 'ticket';
+        
+        container.innerHTML = `
+            <div class="conversation-header">
+                <div class="conversation-info">
+                    <div class="conversation-avatar">${this.currentConversation.customer.name.charAt(0).toUpperCase()}</div>
+                    <div class="conversation-details">
+                        <h3>${this.currentConversation.customer.name}</h3>
+                        <p>${this.currentConversation.customer.email}${isTicket ? ` • ${this.currentConversation.subject}` : ''}</p>
+                    </div>
+                </div>
+                <div class="conversation-actions">
+                    <button class="action-btn primary">Resolve</button>
+                    <button class="action-btn">Transfer</button>
+                </div>
+            </div>
+            <div class="messages-container" id="messagesContainer">
+                <div class="message customer">
+                    <div class="message-avatar customer">${this.currentConversation.customer.name.charAt(0).toUpperCase()}</div>
+                    <div class="message-content">
+                        <div class="message-bubble">${this.currentConversation.lastMessage.text}</div>
+                        <div class="message-time">${this.formatTime(this.currentConversation.lastMessage.timestamp)}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="message-input-container">
+                <div class="message-input-wrapper">
+                    <textarea class="message-input" placeholder="Type your message..." id="messageInput"></textarea>
+                    <button class="send-btn" id="sendBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        this.setupConversationListeners();
+    }
+
+    setupConversationListeners() {
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+
+        if (sendBtn && messageInput) {
+            sendBtn.addEventListener('click', () => {
+                this.sendMessage();
+            });
+
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+        }
+    }
+
+    sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        
+        if (!text) return;
+
+        input.value = '';
+        
+        const message = {
+            text: text,
+            sender: 'agent',
+            timestamp: new Date()
+        };
+
+        this.addMessageToUI(message);
+    }
+
+    addMessageToUI(message) {
+        const container = document.getElementById('messagesContainer');
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${message.sender}`;
+        messageElement.innerHTML = `
+            <div class="message-avatar ${message.sender}">${message.sender === 'agent' ? 'A' : 'C'}</div>
+            <div class="message-content">
+                <div class="message-bubble">${this.escapeHtml(message.text)}</div>
+                <div class="message-time">${this.formatTime(message.timestamp)}</div>
+            </div>
+        `;
+
+        container.appendChild(messageElement);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    handleNewMessage(message) {
+        if (this.currentConversation && this.currentConversation.id === message.conversationId) {
+            this.addMessageToUI(message);
+        }
+        this.updateBadges();
+    }
+
+    toggleAgentStatus() {
+        const statuses = ['online', 'away', 'offline'];
+        const currentIndex = statuses.indexOf(this.agentStatus);
+        const nextIndex = (currentIndex + 1) % statuses.length;
+        this.agentStatus = statuses[nextIndex];
+
+        const indicator = document.getElementById('statusIndicator');
+        const text = document.getElementById('statusText');
+
+        indicator.className = `status-indicator ${this.agentStatus === 'online' ? '' : this.agentStatus}`;
+        text.textContent = this.agentStatus.charAt(0).toUpperCase() + this.agentStatus.slice(1);
+    }
+
+    updateBadges() {
+        const unreadCount = this.conversations.filter(c => c.unread).length;
+        const chatCount = this.conversations.filter(c => c.type === 'chat' && c.unread).length;
+        const ticketCount = this.conversations.filter(c => c.type === 'ticket' && c.unread).length;
+
+        document.getElementById('inboxBadge').textContent = unreadCount;
+        document.getElementById('chatsBadge').textContent = chatCount;
+        document.getElementById('ticketsBadge').textContent = ticketCount;
+    }
+
+    formatTime(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+
+        if (diffInMinutes < 1) return 'now';
+        if (diffInMinutes < 60) return `${diffInMinutes}m`;
+        if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+        return date.toLocaleDateString();
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.dashboard = new PriyoChatDashboard();
+});
