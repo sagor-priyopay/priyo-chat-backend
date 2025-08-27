@@ -288,19 +288,15 @@ class PriyoChatDashboard {
 
         container.querySelectorAll('.inbox-item').forEach(item => {
             item.addEventListener('click', () => {
-                this.selectConversation(item.dataset.id);
+                document.querySelectorAll('.inbox-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`[data-id="${item.dataset.id}"]`).classList.add('active');
+
+                this.currentConversation = this.conversations.find(c => c.id === item.dataset.id);
+                this.renderConversationView();
             });
         });
-    }
-
-    selectConversation(conversationId) {
-        document.querySelectorAll('.inbox-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        document.querySelector(`[data-id="${conversationId}"]`).classList.add('active');
-
-        this.currentConversation = this.conversations.find(c => c.id === conversationId);
-        this.renderConversationView();
     }
 
     renderConversationView() {
