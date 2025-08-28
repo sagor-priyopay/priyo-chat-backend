@@ -249,7 +249,7 @@ router.post('/message', validateRequest(widgetSchemas.message), async (req: Requ
       sender: 'user',  // Widget expects 'sender' as 'bot' or 'user'
       senderId: newMessage.senderId,
       senderUsername: user.username,
-      senderRole: 'CUSTOMER',
+      senderRole: 'USER',
       timestamp: newMessage.createdAt,
       conversationId,
       type: newMessage.type,
@@ -264,7 +264,7 @@ router.post('/message', validateRequest(widgetSchemas.message), async (req: Requ
           conversationId,
           userId: 'ai-agent',
           username: 'Priyo AI',
-          senderRole: 'AGENT'
+          senderRole: 'USER'
         });
       } catch {}
 

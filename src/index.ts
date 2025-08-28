@@ -17,6 +17,7 @@ import conversationRoutes from './routes/conversations';
 import messageRoutes from './routes/messages';
 import uploadRoutes from './routes/upload';
 import widgetRoutes from './routes/widget';
+import aiAgentRoutes from './routes/ai-agent';
 
 // Load environment variables
 dotenv.config();
@@ -167,6 +168,7 @@ async function startServer(): Promise<void> {
           messages: '/api/messages',
           upload: '/api/upload',
           widget: '/api/widget',
+          aiAgent: '/api/ai-agent',
         },
         widget: '/widget/test.html',
         timestamp: new Date().toISOString()
@@ -210,6 +212,7 @@ async function startServer(): Promise<void> {
     app.use('/api/messages', messageRoutes);
     app.use('/api/upload', uploadRoutes);
     app.use('/api/widget', widgetRoutes);
+    app.use('/api/ai-agent', aiAgentRoutes);
     app.use('/api/priyo-auth', require('./routes/priyo-auth').default);
 
     // 404 handler
