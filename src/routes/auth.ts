@@ -14,7 +14,7 @@ const jwtService = new JWTService();
 // Register
 router.post('/register', validateRequest(authValidation.register), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { email, username, password, role = 'CUSTOMER' }: RegisterRequest = req.body;
+    const { email, username, password, role = 'USER' }: RegisterRequest = req.body;
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
