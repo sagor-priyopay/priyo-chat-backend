@@ -16,10 +16,9 @@ model User {
   username   String   @unique
   password   String
   avatar     String?
-  role       String   @default("CUSTOMER")
+  role       String   @default("USER")
   isOnline   Boolean  @default(false)
   lastSeen   DateTime @default(now())
-  priyoPayId String?  @unique
   verified   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -30,7 +29,6 @@ model User {
   refreshTokens      RefreshToken[]
   messageReads       MessageRead[]
   typingIndicators   TypingIndicator[]
-  assignedConversations Conversation[]   @relation("AssignedConversations")
 
   @@map("users")
 }
@@ -53,8 +51,6 @@ model Conversation {
   name       String?
   type       String           @default("DIRECT")
   status     String           @default("OPEN")
-  priority   String           @default("MEDIUM")
-  assignedTo String?
   isActive   Boolean           @default(true)
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
@@ -63,7 +59,6 @@ model Conversation {
   participants ConversationUser[]
   messages     Message[]
   typingUsers  TypingIndicator[]
-  assignedAgent User?           @relation("AssignedConversations", fields: [assignedTo], references: [id])
 
   @@map("conversations")
 }
@@ -133,8 +128,7 @@ model TypingIndicator {
 }
 
 // Note: SQLite doesn't support enums, so we use string constants
-// Valid UserRole values: "ADMIN", "AGENT", "CUSTOMER"
+// Valid UserRole values: "USER"
 // Valid ConversationType values: "DIRECT", "GROUP"  
 // Valid MessageType values: "TEXT", "FILE", "IMAGE"
 // Valid ConversationStatus values: "OPEN", "PENDING", "RESOLVED", "CLOSED"
-// Valid ConversationPriority values: "LOW", "MEDIUM", "HIGH", "URGENT"

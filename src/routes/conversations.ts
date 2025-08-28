@@ -2,7 +2,6 @@ import { Router, Response } from 'express';
 import { AuthenticatedRequest, CreateConversationRequest } from '../types';
 import { DatabaseService } from '../services/database';
 import { authenticateToken } from '../middleware/auth';
-import { requireAgentOrAdmin } from '../middleware/roles';
 import { validateRequest } from '../middleware/validation';
 import { conversationValidation } from '../utils/validation';
 
@@ -245,7 +244,7 @@ router.get('/:conversationId', authenticateToken, async (req: AuthenticatedReque
 });
 
 // Leave/Close conversation (only agents can close conversations)
-router.delete('/:conversationId', authenticateToken, requireAgentOrAdmin, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.delete('/:conversationId', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { conversationId } = req.params;

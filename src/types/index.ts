@@ -5,7 +5,7 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     email: string;
     username: string;
-    role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
+    role: 'USER';
     // Optional fields for backward compatibility and widget support
     userId?: string;
     visitorId?: string;
@@ -21,7 +21,7 @@ export interface JWTPayload {
   userId: string;
   email: string;
   username: string;
-  role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
+  role: 'USER';
   visitorId?: string;
   isWidget?: boolean;
 }
@@ -40,7 +40,7 @@ export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
-  role?: 'ADMIN' | 'AGENT' | 'CUSTOMER';
+  role?: 'USER';
 }
 
 export interface RefreshTokenRequest {
@@ -63,7 +63,7 @@ export interface SocketUser {
   id: string;
   email: string;
   username: string;
-  role: 'ADMIN' | 'AGENT' | 'CUSTOMER';
+  role: 'USER';
   socketId: string;
   isWidget?: boolean;
 }

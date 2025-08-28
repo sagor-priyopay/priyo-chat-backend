@@ -1,16 +1,15 @@
-# Priyo Chat - Real-time Chat System Backend
+# Priyo Chat Backend
 
-A complete backend system for real-time chat applications built with Node.js, TypeScript, Express, PostgreSQL, and Socket.IO.
+A simplified real-time chat application backend built with Node.js, TypeScript, Express, PostgreSQL, and Socket.IO.
 
 ## 🚀 Features
 
 - **Authentication**: JWT-based auth with access & refresh tokens
-- **Role-Based Access Control**: Admin, Agent, and Customer roles with permissions
 - **Real-time Communication**: WebSocket support via Socket.IO
 - **Database**: PostgreSQL with Prisma ORM
 - **File Uploads**: Local file storage with validation
 - **Security**: Helmet, CORS, rate limiting
-- **Docker Support**: Complete containerization setup
+- **Website Widget**: Embeddable chat widget for websites
 - **TypeScript**: Full type safety throughout the application
 
 ## 📋 API Endpoints

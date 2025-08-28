@@ -5,7 +5,7 @@ export const authValidation = {
     email: Joi.string().email().required(),
     username: Joi.string().alphanum().min(3).max(30).required(),
     password: Joi.string().min(6).required(),
-    role: Joi.string().valid('ADMIN', 'AGENT', 'CUSTOMER').optional().default('CUSTOMER'),
+    role: Joi.string().valid('USER').optional().default('USER'),
   }),
 
   login: Joi.object({

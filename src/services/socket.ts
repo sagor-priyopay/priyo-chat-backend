@@ -45,7 +45,7 @@ export class SocketService {
             id: visitorId,
             email: `visitor_${visitorId}@widget.local`,
             username: `Visitor_${visitorId.slice(-6)}`,
-            role: 'CUSTOMER',
+            role: 'USER',
             socketId: socket.id,
             isWidget: true,
           };
@@ -431,14 +431,7 @@ export class SocketService {
     }
   }
 
-  public emitToRole(role: string, event: string, data: any): void {
-    // Emit to all connected users with the specified role
-    this.connectedUsers.forEach((user, socketId) => {
-      if (user.role === role) {
-        this.io.to(socketId).emit(event, data);
-      }
-    });
-  }
+  // Removed role-based emission as all users now have 'USER' role
 
   public static getInstance(): SocketService {
     if (!SocketService.instance) {

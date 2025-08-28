@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../types';
-import logger from '../utils/logger';
 
 // Request ID middleware for tracking
 export const requestId = (req: Request, res: Response, next: NextFunction): void => {
@@ -69,15 +68,13 @@ export const auditLog = (req: AuthenticatedRequest, res: Response, next: NextFun
     const isSensitive = sensitiveRoutes.some(route => (req as any).path.startsWith(route));
     
     if (isSensitive || res.statusCode >= 400) {
-      logger.info('API Request', {
+      console.log('API Request:', {
         method: (req as any).method,
         url: (req as any).url,
         statusCode: res.statusCode,
         duration,
         ip: (req as any).ip,
-        userAgent: (req as any).get('User-Agent'),
         userId: req.user?.id,
-        headers: (req as any).headers,
         timestamp: new Date().toISOString()
       });
     }
@@ -103,7 +100,7 @@ export const userRateLimit = (maxRequests: number = 1000, windowMs: number = 15 
     }
     
     if (userLimit.count >= maxRequests) {
-      logger.warn('Rate limit exceeded', { ip: (req as any).ip, path: (req as any).path });
+      console.warn('Rate limit exceeded:', { ip: (req as any).ip, path: (req as any).path });
       res.status(429).json({
         error: 'Too many requests',
         retryAfter: Math.ceil((userLimit.resetTime - now) / 1000)

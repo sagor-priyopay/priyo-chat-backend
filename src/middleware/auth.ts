@@ -25,7 +25,7 @@ export const authenticateToken = (
       userId: userId,
       email: 'admin@priyo.com',
       username: 'admin',
-      role: 'ADMIN',
+      role: 'USER',
       visitorId: null,
     };
     next();

@@ -55,8 +55,7 @@ router.post('/customer/verify', async (req: Request, res: Response): Promise<voi
           password: await bcrypt.hash(Math.random().toString(36), 10), // Random password since they use Priyo Pay auth
           role: 'CUSTOMER',
           isOnline: true,
-          priyoPayId: priyoPayUserId, // Store Priyo Pay ID for reference
-          verified: priyoPayUser.verified
+            verified: priyoPayUser.verified
         }
       });
     } else {
@@ -66,8 +65,7 @@ router.post('/customer/verify', async (req: Request, res: Response): Promise<voi
         data: {
           isOnline: true,
           lastSeen: new Date(),
-          priyoPayId: priyoPayUserId // Update Priyo Pay ID if changed
-        }
+          }
       });
     }
 
@@ -76,14 +74,14 @@ router.post('/customer/verify', async (req: Request, res: Response): Promise<voi
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
+      role: 'USER',
     });
 
     const refreshToken = generateRefreshToken({
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
+      role: 'USER',
     });
 
     // Store refresh token
@@ -104,8 +102,7 @@ router.post('/customer/verify', async (req: Request, res: Response): Promise<voi
         id: user.id,
         email: user.email,
         username: user.username,
-        role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
-        priyoPayId: user.priyoPayId,
+        role: 'USER',
         verified: user.verified
       }
     });
@@ -145,14 +142,6 @@ router.post('/agent/login', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Verify user is agent or admin
-    if (user.role !== 'AGENT' && user.role !== 'ADMIN') {
-      res.status(403).json({
-        success: false,
-        message: 'Access denied. Agent account required.'
-      });
-      return;
-    }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -178,14 +167,14 @@ router.post('/agent/login', async (req: Request, res: Response): Promise<void> =
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
+      role: 'USER',
     });
 
     const refreshToken = generateRefreshToken({
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: user.role as 'CUSTOMER' | 'ADMIN' | 'AGENT',
+      role: 'USER',
     });
 
     // Store refresh token
@@ -264,7 +253,7 @@ router.post('/admin/create', async (req: Request, res: Response): Promise<void> 
         email,
         username,
         password: hashedPassword,
-        role: 'ADMIN',
+        role: 'USER',
         isOnline: false,
         verified: true
       }
@@ -335,7 +324,7 @@ router.post('/agent/create', async (req: Request, res: Response): Promise<void> 
         email,
         username,
         password: hashedPassword,
-        role: 'AGENT',
+        role: 'USER',
         isOnline: false,
         verified: true
       }

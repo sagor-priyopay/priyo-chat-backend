@@ -146,17 +146,17 @@ router.post('/conversation', validateRequest(widgetSchemas.conversation), async 
 
       // Send welcome message from system/agent
       // First, find or create an agent user for system messages
-      let agentUser = await prisma.user.findFirst({
-        where: { role: 'AGENT' }
+      let systemUser = await prisma.user.findFirst({
+        where: { email: 'system@priyo.com' }
       });
       
-      if (!agentUser) {
-        agentUser = await prisma.user.create({
+      if (!systemUser) {
+        systemUser = await prisma.user.create({
           data: {
-            email: 'agent@priyo.com',
+            email: 'system@priyo.com',
             username: 'Priyo Support',
-            password: 'system_agent',
-            role: 'AGENT'
+            password: 'system_user',
+            role: 'USER'
           }
         });
       }
@@ -164,7 +164,7 @@ router.post('/conversation', validateRequest(widgetSchemas.conversation), async 
       const welcomeMessage = await prisma.message.create({
         data: {
           content: "Hello! 👋 Welcome to Priyo Pay. How can I help you today?",
-          senderId: agentUser.id, // System message from agent
+          senderId: systemUser.id, // System message from agent
           conversationId: conversation.id,
           type: 'TEXT'
         },
@@ -183,7 +183,7 @@ router.post('/conversation', validateRequest(widgetSchemas.conversation), async 
           id: msg.id,
           text: msg.content,  // Widget expects 'text' property
           content: msg.content,
-          sender: msg.sender.role === 'AGENT' ? 'bot' : 'user',  // Map to widget format
+          sender: msg.sender.email === 'system@priyo.com' ? 'bot' : 'user',  // Map to widget format
           senderRole: msg.sender.role,
           senderUsername: msg.sender.username,
           timestamp: msg.createdAt,

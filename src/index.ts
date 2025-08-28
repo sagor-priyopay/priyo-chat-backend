@@ -5,7 +5,6 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
-import logger from './utils/logger';
 import { requestId, securityHeaders, sanitizeInput, auditLog } from './middleware/security';
 
 import { DatabaseService } from './services/database';
@@ -18,8 +17,6 @@ import conversationRoutes from './routes/conversations';
 import messageRoutes from './routes/messages';
 import uploadRoutes from './routes/upload';
 import widgetRoutes from './routes/widget';
-import aiAgentRoutes from './routes/ai-agent';
-import agentDashboardRoutes from './routes/agent-dashboard';
 
 // Load environment variables
 dotenv.config();
@@ -85,7 +82,6 @@ async function startServer(): Promise<void> {
       'http://localhost:3001',
       'http://localhost:5173', // Vite default port
       'https://pay.priyo.com',
-      'https://agent.pay.priyo.com',
       'https://api.pay.priyo.com'
     ]);
     
@@ -132,8 +128,7 @@ async function startServer(): Promise<void> {
       legacyHeaders: false,
       skip: (req) => {
         // Skip rate limiting for static files
-        return req.path.startsWith('/agent-dashboard/') || 
-               req.path.startsWith('/widget/') || 
+        return req.path.startsWith('/widget/') || 
                req.path.startsWith('/uploads/');
       }
     });
@@ -172,22 +167,26 @@ async function startServer(): Promise<void> {
           messages: '/api/messages',
           upload: '/api/upload',
           widget: '/api/widget',
-          aiAgent: '/api/ai-agent'
         },
         widget: '/widget/test.html',
-        agentDashboard: '/agent-dashboard/login.html',
         timestamp: new Date().toISOString()
       });
     });
 
-    // Health check endpoints
-    const { MonitoringService } = await import('./utils/monitoring');
-    app.get('/health', MonitoringService.healthCheckEndpoint);
-    app.get('/api/health', MonitoringService.healthCheckEndpoint);
-    
-    // Metrics endpoint for monitoring
-    app.get('/metrics', (req, res) => {
-      res.json(MonitoringService.getMetrics());
+    // Simple health check endpoint
+    app.get('/health', (req, res) => {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+      });
+    });
+    app.get('/api/health', (req, res) => {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+      });
     });
 
     // Serve widget static files with proper MIME types
@@ -203,20 +202,6 @@ async function startServer(): Promise<void> {
       }
     }));
     
-    // Serve agent dashboard static files with proper MIME types
-    app.use('/agent-dashboard', express.static(path.join(__dirname, '../public/agent-dashboard'), {
-      setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.js')) {
-          res.setHeader('Content-Type', 'text/javascript');
-        } else if (filePath.endsWith('.css')) {
-          res.setHeader('Content-Type', 'text/css');
-        } else if (filePath.endsWith('.html')) {
-          res.setHeader('Content-Type', 'text/html');
-        } else if (filePath.endsWith('.json')) {
-          res.setHeader('Content-Type', 'application/json');
-        }
-      }
-    }));
     
 
     // API routes
@@ -225,10 +210,7 @@ async function startServer(): Promise<void> {
     app.use('/api/messages', messageRoutes);
     app.use('/api/upload', uploadRoutes);
     app.use('/api/widget', widgetRoutes);
-    app.use('/api/ai-agent', aiAgentRoutes);
-    app.use('/api/agent-dashboard', agentDashboardRoutes);
     app.use('/api/priyo-auth', require('./routes/priyo-auth').default);
-    app.use('/api/channels', require('./routes/channels').default);
 
     // 404 handler
     app.use('*', (req, res) => {
@@ -290,17 +272,6 @@ async function startServer(): Promise<void> {
       socketService.cleanupTypingIndicators();
     }, 5 * 60 * 1000);
 
-    // Self-ping to prevent Render free tier spin-down (every 14 minutes)
-    if (process.env.NODE_ENV === 'production') {
-      setInterval(async () => {
-        try {
-          const response = await fetch(`${process.env.RENDER_EXTERNAL_URL || 'https://priyo-chat-64wg.onrender.com'}/health`);
-          console.log(`Self-ping: ${response.status} at ${new Date().toISOString()}`);
-        } catch (error) {
-          console.log('Self-ping failed:', error.message);
-        }
-      }, 14 * 60 * 1000); // 14 minutes
-    }
 
   } catch (error) {
     console.error('Failed to initialize application:', error);
